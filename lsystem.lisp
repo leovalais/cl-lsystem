@@ -1,0 +1,11 @@
+(in-package :cl-lsystem)
+
+(defun process (sexp n &optional (env (make-instance 'png-environment)))
+  (let* ((lsystem (parse sexp))
+         (word (expand (grammar lsystem) n)))
+    (iter (for letter in-vector word)
+      (let ((instruction (gethash letter (mapping lsystem))))
+        (assert instruction)
+        (eval instruction env)))
+    (save env "out")
+    :ok))
