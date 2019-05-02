@@ -27,7 +27,24 @@
     :initial-orientation (v 0 0 (/ pi 4))
     :turtle ((X (forward 5))
              (F (forward 5))
-             (+ (turn (v 0 0 *plant-1-delta*)))
-             (- (turn (v 0 0 (- *plant-1-delta*))))
+             (+ (turn (v 0 0 *plant-p-delta*)))
+             (- (turn (v 0 0 (- *plant-p-delta*))))
+             ([ (stack))
+             (] (unstack)))))
+
+
+(defun deg->rad (x)
+  (* x (/ pi 180)))
+
+(defparameter *plant-f-delta* (deg->rad 22.5))
+(defparameter *plant-f*
+  '(:axiom (X)
+    :rules ((X (F - [ [ X ] + X ] + F [ + F X ] - X))
+            (F (F F)))
+    :initial-orientation (v 0 0 (/ pi 4))
+    :turtle ((X (forward 5))
+             (F (forward 5))
+             (+ (turn (v 0 0 *plant-f-delta*)))
+             (- (turn (v 0 0 (- *plant-f-delta*))))
              ([ (stack))
              (] (unstack)))))
