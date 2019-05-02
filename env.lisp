@@ -41,7 +41,10 @@
    (width :initform 2000
           :initarg :width)
    (height :initform 2000
-           :initarg :height)))
+           :initarg :height)
+   (origin :initform (v 0 0)
+           :initarg :origin
+           :type V2)))
 
 (defclass obj-environment (environment)
   ()) ; FIXME tbd
@@ -50,15 +53,19 @@
 (defmethod initialize-instance :after ((env png-environment) &key)
   (setf (vecto-graphics-state env)
         (make-instance 'vecto::graphics-state))
-  (with-slots (width height) env
+  (with-slots (width height origin) env
     (vecto::state-image (vecto-graphics-state env) width height)
-    (eval-in-graphics-state env (lambda ()
-                                  (vecto:translate (/ width 2) (/ height 2))
-                                  (vecto:move-to 0 0)
-                                  (vecto:set-rgb-fill 1.0 1.0 1.0)
-                                  (vecto:rectangle (- (/ width 2)) (- (/ height 2)) width height)
-                                  (vecto:set-rgb-stroke 0.3 0.1 8.0)
-                                  (vecto:set-line-width 2)))))
+    (let* ((translation (v- (v (/ width 2)
+                               (/ height 2))
+                            origin))
+           (-translation (v- translation)))
+      (eval-in-graphics-state env (lambda ()
+                                    (vecto:set-rgb-fill 1.0 1.0 1.0)
+                                    (vecto:set-rgb-stroke 0.0 0.0 0.0)
+                                    (vecto:set-line-width 1)
+                                    (vecto:translate (vx translation) (vy translation))
+                                    (vecto:rectangle (vx -translation) (vy -translation) width height)
+                                    (vecto:move-to 0 0))))))
 
 (defgeneric eval-in-graphics-state (env fun)
   (:method ((env png-environment) fun)
