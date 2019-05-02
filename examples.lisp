@@ -16,3 +16,16 @@
              (+ (turn (v 0 0 (/ pi 3))))
              (- (turn (v 0 0 (- (/ pi 3))))))
     :initial-orientation (v (/ pi 4) (/ pi 4) (* -1/3 pi))))
+
+(defparameter *plant-1-delta* (/ pi 9))
+(defparameter *plant-1*
+  '(:axiom (X)
+    :rules ((X (F [ + X ] F [ - X ] + X))
+            (F (F F)))
+    :initial-orientation (v 0 0 (/ pi 4))
+    :turtle ((X (forward 5))
+             (F (forward 5))
+             (+ (turn (v 0 0 *plant-1-delta*)))
+             (- (turn (v 0 0 (- *plant-1-delta*))))
+             ([ (stack))
+             (] (unstack)))))

@@ -27,6 +27,9 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
             (* L (cos b) (sin a))
             (* H (sin b)))))))
 
+(defmethod eval ((noop noop) (env environment))
+  (declare (ignore noop env)))
+
 (defmethod eval ((fwd forward) (env png-environment))
   (with-slots (delta) fwd
     (let* ((turtle (turtle env))
@@ -43,3 +46,11 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
     (let ((turtle (turtle env)))
       (update-turtle env :orientation (v+ (turtle-orientation turtle)
                                           angle)))))
+
+(defmethod eval ((stack stack) (env environment))
+  (declare (ignore stack))
+  (stack env))
+
+(defmethod eval ((unstack unstack) (env environment))
+  (declare (ignore unstack))
+  (unstack env))

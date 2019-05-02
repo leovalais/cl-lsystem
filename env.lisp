@@ -28,13 +28,13 @@
         (setf (turtle-orientation turtle) orientation)))))
 
 (defmethod stack progn ((env environment))
-  (push (turtle env) (env-stack env)))
+  (with-slots (turtle) env
+    (push turtle (env-stack env))
+    (setf turtle (make-turtle :position (turtle-position turtle)
+                              :orientation (turtle-orientation turtle)))))
 
 (defmethod unstack progn ((env environment))
   (setf (turtle env) (pop (env-stack env))))
-
-;; (vecto:with-canvas (:width 100 :height 100)
-;;   X)
 
 (defclass png-environment (environment)
   ((vecto-graphics-state :accessor vecto-graphics-state)
@@ -55,14 +55,14 @@
         (make-instance 'vecto::graphics-state))
   (with-slots (width height origin) env
     (vecto::state-image (vecto-graphics-state env) width height)
-    (let* ((translation (v- (v (/ width 2)
+    (let* ((translation (v+ (v (/ width 2)
                                (/ height 2))
                             origin))
            (-translation (v- translation)))
       (eval-in-graphics-state env (lambda ()
                                     (vecto:set-rgb-fill 1.0 1.0 1.0)
                                     (vecto:set-rgb-stroke 0.0 0.0 0.0)
-                                    (vecto:set-line-width 1)
+                                    (vecto:set-line-width 2)
                                     (vecto:translate (vx translation) (vy translation))
                                     (vecto:rectangle (vx -translation) (vy -translation) width height)
                                     (vecto:move-to 0 0))))))
