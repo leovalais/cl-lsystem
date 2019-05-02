@@ -12,7 +12,6 @@
                 :alexandria
                 :rte
                 :gutils
-                :array-operations
                 :closer-mop
                 :vecto)
 
