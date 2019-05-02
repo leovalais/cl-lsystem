@@ -40,8 +40,12 @@
    (mapping :initform (required mapping)
             :initarg :mapping
             :accessor mapping
-            :type letter-mapping)))
+            :type letter-mapping)
+   (initial-orientation :initform (v 0 0 0)
+                        :initarg :initial-orientation
+                        :accessor initial-orientation
+                        :type V3)))
 
 (deftype letter-mapping ()
-  'hashtable)
+  'hash-table)
   ;; '(rte:rte (:+ (rte:rte (:cat letter turtle-move)))))

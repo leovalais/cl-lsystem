@@ -1,11 +1,15 @@
 (in-package :cl-lsystem)
 
-(defun process (sexp n &optional (env (make-instance 'png-environment)))
+(defun process (sexp n &optional
+                         (env (make-instance 'png-environment))
+                         (filename "out"))
   (let* ((lsystem (parse sexp))
          (word (expand (grammar lsystem) n)))
+    (setf (turtle-orientation (turtle env))
+          (initial-orientation lsystem))
     (iter (for letter in-vector word)
       (let ((instruction (gethash letter (mapping lsystem))))
         (assert instruction)
         (eval instruction env)))
-    (save env "out")
+    (save env filename)
     :ok))

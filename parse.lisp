@@ -22,6 +22,9 @@
     mapping))
 
 (defun parse (sexp)
-  (make-instance 'lsystem
-                 :grammar (parse-grammar sexp)
-                 :mapping (parse-mapping (getf sexp :turtle))))
+  (let ((lsystem (make-instance 'lsystem
+                                :grammar (parse-grammar sexp)
+                                :mapping (parse-mapping (getf sexp :turtle)))))
+    (if-let (io (cl:eval (getf sexp :initial-orientation)))
+      (setf (slot-value lsystem 'initial-orientation) io))
+    lsystem))
