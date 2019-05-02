@@ -17,8 +17,10 @@
              (- (turn (v 0 0 (- (/ pi 3))))))
     :initial-orientation (v (/ pi 4) (/ pi 4) (* -1/3 pi))))
 
-(defparameter *plant-1-delta* (/ pi 9))
-(defparameter *plant-1*
+;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
+
+(defparameter *plant-p-delta* (/ pi 9))
+(defparameter *plant-p*
   '(:axiom (X)
     :rules ((X (F [ + X ] F [ - X ] + X))
             (F (F F)))
