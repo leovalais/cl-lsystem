@@ -15,7 +15,7 @@
              (F1 (forward 5))
              (+ (turn (v 0 0 (/ pi 3))))
              (- (turn (v 0 0 (- (/ pi 3))))))
-    :initial-orientation (v (/ pi 4) (/ pi 4) (* -1/3 pi))))
+    :initial-orientation (v 0 0 (* -1/3 pi))))
 
 ;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
 
