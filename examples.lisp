@@ -48,3 +48,25 @@
              (- (turn (v 0 0 (- *plant-f-delta*))))
              ([ (stack))
              (] (unstack)))))
+
+
+;; trees in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
+
+(defparameter *tree-b-delta* (deg->rad 30))
+(defparameter *tree-b*
+  '(:axiom (F A)
+    ;;  A = f[^Bl]>>[^Bl]>>A, B = f[-Bl]B
+    :rules ((A (F [ ^ B L ] > > [ ^ B L ] > > A))
+            (B (F [ - B L ] B)))
+    :turtle ((F (forward 5))
+             (L (forward 5))
+             (A (noop))
+             (B (noop))
+             ([ (stack))
+             (] (unstack))
+             (+ (turn (v 0 0 *tree-b-delta*)))
+             (- (turn (v 0 0 (- *tree-b-delta*))))
+             (^ (turn (v 0 *tree-b-delta* 0)))
+             (& (turn (v 0 (- *tree-b-delta*) 0)))
+             (< (turn (v *tree-b-delta* 0 0)))
+             (> (turn (v (- *tree-b-delta*) 0 0))))))

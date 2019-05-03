@@ -36,6 +36,10 @@
 (defmethod unstack progn ((env environment))
   (setf (turtle env) (pop (env-stack env))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; PNG using VECTO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defclass png-environment (environment)
   ((vecto-graphics-state :accessor vecto-graphics-state)
    (width :initform 2000
@@ -45,9 +49,6 @@
    (origin :initform (v 0 0)
            :initarg :origin
            :type V2)))
-
-(defclass obj-environment (environment)
-  ()) ; FIXME tbd
 
 
 (defmethod initialize-instance :after ((env png-environment) &key)
@@ -77,3 +78,47 @@
     (vecto:fill-and-stroke)
     (vecto:save-png (format nil "~a.png" filename))
     (vecto::clear-state vecto::*graphics-state*)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Wavefront OBJ
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun sxhash-vect (v)
+  (sxhash (map 'list #'identity v)))
+(sb-ext:define-hash-table-test v= sxhash-vect)
+
+(defclass obj-environment (environment)
+  ((vertices :initform (make-hash-table :test 'v=)
+             :accessor vertices)
+   (lines :initform ()
+          :accessor lines)
+   (faces :initform ()
+          :accessor faces)
+   (current-index :initform 1)))
+
+(defmethod initialize-instance :after ((env obj-environment) &key)
+  (with-slots (vertices current-index) env
+    (setf (gethash (v 0 0 0) vertices)
+          current-index)
+    (incf current-index)))
+
+(defmethod save ((env obj-environment) filename)
+  (with-open-file (obj (format nil "~a.obj" filename)
+                       :direction :output
+                       :if-exists :supersede)
+    (with-slots (vertices lines faces) env
+      (labels ((dump-v (v)
+                 (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
+               (index-of (v)
+                 (gethash v vertices))
+               (dump-l (l)
+                 (destructuring-bind (src . dst) l
+                   (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
+               (dump-f (f)
+                 (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
+        (maphash-keys #'dump-v vertices)
+        (dump-v (v 0 0 0))
+        (mapc #'dump-f faces)
+        (mapc #'dump-l lines))))
+  (values))
