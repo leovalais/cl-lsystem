@@ -81,6 +81,108 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; VRML (.wrl)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defclass vrml-environment (environment)
+  ((shapes :initform (make-hash-table) ; shape names are symbols, so eql is ok
+           :initarg :shapes
+           :accessor shapes
+           :type hash-table) ; NAME * vrml-shape TODO implement that
+   (transform :initform (make-instance 'vrml-translation)
+              :initarg :transform
+              :accessor transform
+              :type vrml-transformation)))
+
+(defclass vrml-shape ()
+  ((material :initform nil
+             :type null ; FIXME
+             :accessor material
+             :initarg :material)
+   (geometry :initform (required geometry)
+             :type vrml-geometry
+             :accessor geometry
+             :initarg :geometry)))
+
+(defclass vrml-geometry () ())
+
+(defclass vrml-cylinder (vrml-geometry)
+  ((radius :initform 1
+           :initarg :radius
+           :accessor radius
+           :type real)
+   (height :initform 1
+           :initarg :height
+           :accessor height
+           :type real)))
+
+(defclass vrml-transformation (vrml-geometry)
+  ((children :initform ()
+             :initarg :children
+             :accessor children
+             :type list)))
+(defclass vrml-translation (vrml-transformation)
+  ((vect :initform (v 0 0 0)
+         :initarg :vect
+         :accessor vect
+         :type vect)))
+(defclass vrml-rotation (vrml-transformation)
+  ((vect :initform (v 0 0 0)
+         :initarg :vect
+         :accessor vect
+         :type vect)
+   (spin :initform 1.0
+         :initarg :spin
+         :accessor spin
+         :type real)))
+
+
+(defmethod stack progn ((env vrml-environment))
+  (with-slots (transform stack) env
+    (push transform stack)))
+
+(defmethod unstack progn ((env vrml-environment))
+  (setf (transform env) (pop (env-stack env))))
+
+(defmethod save ((env vrml-environment) filename)
+  (with-open-file (wrl (format nil "~a.wrl" filename)
+                       :direction :output
+                       :if-exists :supersede)
+    (format wrl "~a" (export-vrml env)))
+  (values))
+
+
+(defgeneric export-vrml (vrml)
+  (:documentation "VRML2string"))
+
+(defmethod export-vrml ((env vrml-environment))
+  (format nil "#VRML V2.0 utf8~%~%~a" (export-vrml (transform env))))
+;; (format nil "#VRML V2.0 utf8~%~%~{~a~^~&~%~}"
+;;         (mapcar #'export-vrml (shapes env))))
+
+(defmethod export-vrml ((shape vrml-shape))
+  (format nil "~&Shape {~%~a~&~a~&}"
+          ""; (export-vrml (material shape))
+          (export-vrml (geometry shape))))
+
+(defmethod export-vrml ((cylinder vrml-cylinder))
+  (format nil "~&geometry Cylinder {~%radius ~f~%height ~f~%}"
+          (radius cylinder)
+          (height cylinder)))
+
+(defmethod export-vrml ((translation vrml-translation))
+  (with-slots (vect children) translation
+    (format nil "~&Transform {~%translation ~f ~f ~f~%children [~{~&~a~}~&]~%}"
+            (vx vect) (vy vect) (vz vect)
+            (mapcar #'export-vrml children))))
+
+(defmethod export-vrml ((translation vrml-rotation))
+  (with-slots (vect spin children) translation
+    (format nil "~&Transform {~%rotation ~f ~f ~f ~f~%children [~{~&~a~}~&]~%}"
+            (vx vect) (vy vect) (vz vect) spin
+            (mapcar #'export-vrml children))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Wavefront OBJ
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

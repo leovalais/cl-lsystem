@@ -70,3 +70,25 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
         (setf (gethash newp vertices) current-index)
         (incf current-index)
         (push (cons oldp newp) lines)))))
+
+(defmethod eval ((fwd forward) (env vrml-environment))
+  (with-slots (delta) fwd
+    (let* ((turtle (turtle env))
+           (oldp (turtle-position turtle))
+           (newp (forward-pos turtle delta))
+           (diffp (v- newp oldp)))
+      (update-turtle env :position newp)
+      (let* ((branch (make-instance 'vrml-shape
+                                    :geometry (make-instance 'vrml-cylinder
+                                                             :height delta)))
+
+             (translation (make-instance 'vrml-translation
+                                         :vect (v* (v 0.5 0.5 0.5)
+                                                   diffp)
+                                         :children (list branch))))
+        (with-slots (transform) env
+          (with-slots (children) transform
+            (setf children (append children
+                                   (list (make-instance 'vrml-shape
+                                                        :geometry translation))))
+            (setf transform translation)))))))
