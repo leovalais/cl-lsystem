@@ -52,6 +52,24 @@
 
 ;; trees in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
 
+(defparameter *tree-a-delta* (deg->rad 25))
+(defparameter *tree-a*
+  '(:axiom (F F F F F A)
+    :rules ((A (F [ + + A L ] [ - - A L ] > > > A)))
+    :initial-orientation (v (/ pi 2) (/ pi 2) 0)
+    :turtle ((F (forward 5))
+             (L (noop))
+             (A (noop))
+             (B (noop))
+             ([ (stack))
+             (] (unstack))
+             (+ (turn (v 0 0 *tree-a-delta*)))
+             (- (turn (v 0 0 (- *tree-a-delta*))))
+             (^ (turn (v 0 *tree-a-delta* 0)))
+             (& (turn (v 0 (- *tree-a-delta*) 0)))
+             (< (turn (v *tree-a-delta* 0 0)))
+             (> (turn (v (- *tree-a-delta*) 0 0))))))
+
 (defparameter *tree-b-delta* (deg->rad 30))
 (defparameter *tree-b*
   '(:axiom (F A)
