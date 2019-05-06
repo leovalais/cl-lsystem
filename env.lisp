@@ -94,6 +94,10 @@
               :accessor transform
               :type vrml-transformation)))
 
+(defmethod initialize-instance :after ((env vrml-environment) &key)
+  (with-slots (shapes transform) env
+    (setf (gethash nil shapes) transform)))
+
 (defclass vrml-shape ()
   ((material :initform nil
              :type null ; FIXME
@@ -156,7 +160,17 @@
   (:documentation "VRML2string"))
 
 (defmethod export-vrml ((env vrml-environment))
-  (format nil "#VRML V2.0 utf8~%~%~a" (export-vrml (transform env))))
+  (flet ((maphash->list (fun ht)
+           (let ((l ()))
+             (maphash (lambda (k v)
+                        (push (funcall fun k v) l))
+                      ht)
+             l)))
+    (format nil "#VRML V2.0 utf8~%~{~%~a~}"
+            (maphash->list (lambda (k v)
+                             (declare (ignore k))
+                             (export-vrml v))
+                           (shapes env)))))
 ;; (format nil "#VRML V2.0 utf8~%~%~{~a~^~&~%~}"
 ;;         (mapcar #'export-vrml (shapes env))))
 
