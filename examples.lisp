@@ -1,11 +1,14 @@
 (in-package :cl-lsystem)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; 2D L-Systems
+
 (defparameter *koch*
   '(:axiom (F)
     :rules ((F (F + F - F - F + F)))
     :turtle ((F (forward 5))
-             (+ (turn (v 0 0 (/ pi 2))))
-             (- (turn (v 0 0 (- (/ pi 2))))))))
+             (+ (turn (/ pi 2)))
+             (- (turn (- (/ pi 2)))))))
 
 (defparameter *siertri*
   '(:axiom (Fr)
@@ -13,9 +16,8 @@
             (Fr (F1 - Fr - F1)))
     :turtle ((Fr (forward 5))
              (F1 (forward 5))
-             (+ (turn (v 0 0 (/ pi 3))))
-             (- (turn (v 0 0 (- (/ pi 3))))))
-    :initial-orientation (v 0 0 (* -1/3 pi))))
+             (+ (turn (/ pi 3)))
+             (- (turn (- (/ pi 3)))))))
 
 ;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
 
@@ -41,14 +43,17 @@
   '(:axiom (X)
     :rules ((X (F - [ [ X ] + X ] + F [ + F X ] - X))
             (F (F F)))
-    :initial-orientation (v 0 0 (/ pi 4))
+    :initial-orientation (/ pi 2)
     :turtle ((X (forward 5))
              (F (forward 5))
-             (+ (turn (v 0 0 *plant-f-delta*)))
-             (- (turn (v 0 0 (- *plant-f-delta*))))
+             (+ (turn *plant-f-delta*))
+             (- (turn (- *plant-f-delta*)))
              ([ (stack))
              (] (unstack)))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; 3D L-Systems
 
 ;; trees in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
 
