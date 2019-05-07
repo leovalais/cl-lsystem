@@ -58,43 +58,72 @@
                                       (direction turtle))))
       (update-turtle env :direction newd))))
 
+;;; NOTE roll => R(x), pitch = R(y), yaw = R(z)
+(defun roll-3d-rotation-matrix (theta)
+  (declare (type real theta))
+  (let ((m (mat (1 0 0)
+                (0 (cos theta) (- (sin theta)))
+                (0 (sin theta) (cos theta)))))
+    (the (matrix 3 3) m)))
 
-#|
-{{
-H Cos[b] Cos[c] + L (-(Cos[c] Sin[a] Sin[b]) - Cos[a] Sin[c]) + U (Cos[a] Cos[c] Sin[b] - Sin[a] Sin[c]),
-H Cos[b] Sin[c] + U (Cos[c] Sin[a] + Cos[a] Sin[b] Sin[c]) + L (Cos[a] Cos[c] - Sin[a] Sin[b] Sin[c]),
-U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
-}}
-|#
-(defun oriented-delta (orientation delta)
-  (v-bind (h l u) delta
-    (v-bind (a b c) orientation
-      (v (+ (* H (cos b) (cos c))
-            (* L (- (- (* (cos c) (sin a) (sin b)))
-                    (* (cos a) (sin c))))
-            (* U (- (* (cos a) (cos c) (sin b))
-                    (* (sin a) (sin c)))))
-         (+ (* H (cos b) (sin c))
-            (* U (+ (* (cos c) (sin a))
-                    (* (cos a) (sin b) (sin c))))
-            (* L (- (* (cos a) (cos c))
-                    (* (sin a) (sin b) (sin c)))))
-         (- (* U (cos a) (cos b))
-            (* L (cos b) (sin a))
-            (* H (sin b)))))))
+(defun pitch-3d-rotation-matrix (theta)
+  (declare (type real theta))
+  (let ((m (mat ((cos theta) 0 (sin theta))
+                (0 1 0)
+                ((- (sin theta)) 0 (cos theta)))))
+    (the (matrix 3 3) m)))
 
-(defun forward-pos (turtle delta)
-  (with-slots (position direction) turtle
-    (v+ position
-        (v* (scalar->v delta (v-dim direction))
-            direction))))
+(defun yaw-3d-rotation-matrix (theta)
+  (declare (type real theta))
+  (let ((m (mat ((cos theta) (- (sin theta)) 0)
+                ((sin theta) (cos theta) 0)
+                (0 0 1))))
+    (the (matrix 3 3) m)))
 
-(defmethod eval ((fwd forward) (env png-environment))
-  (with-slots (delta) fwd
-    (let* ((turtle (turtle env))
-           (oldp (position turtle))
-           (newp (forward-pos turtle delta)))
-      (update-turtle env :position newp)
+(defun rotate-3d-direction (theta d kind)
+  (declare (type real theta)
+           (type V3 d)
+           (type (member :roll :pitch :yaw) kind))
+  (let* ((matrix (ecase kind
+                   (:roll (roll-3d-rotation-matrix theta))
+                   (:pitch (pitch-3d-rotation-matrix theta))
+                   (:yaw (yaw-3d-rotation-matrix theta))))
+         (newd (-> d
+                  v->m
+                  (m* matrix)
+                  m->v
+                  v-unit)))
+    (the V3 newd)))
+
+(defun rotation-vector->rotation-angle-and-kind (v &optional (epsilon 0.0000001))
+  (declare (type V3 v)
+           (type (float (0.0) *) epsilon))
+  (flet ((~zerop (number) ; read "approximately zerop" :D
+           (<= (- epsilon) number epsilon)))
+    (let* ((indexes (loop :for i :below (v-dim v)
+                          :collecting i))
+           (non-zero-indexes (remove-if #'~zerop indexes
+                                        :key (lambda (i)
+                                               (v[] i v)))))
+      (cond
+        ((null non-zero-indexes)
+         (error "if you want to rotate, why is your vector ~a null, you dumba**?" v))
+        ((null (rest non-zero-indexes))
+         (let ((i (first non-zero-indexes)))
+           (values (v[] i v)
+                   (nth i '(:roll :pitch :yaw)))))
+        (t
+         (error "cannot infer rotation axis when the rotation vector ~a has more that one non-zero component" v))))))
+
+(defmethod eval ((turn turn) (env 3d-environment))
+  (with-slots (angle) turn
+    (declare (type V3 angle)) ; => in a 3D space, `angle' must be a 3D vector [roll pitch yaw]
+    (let ((d (direction (turtle env))))
+      (multiple-value-bind (theta kind)
+          (rotation-vector->rotation-angle-and-kind angle)
+        (let ((newd (rotate-3d-direction theta d kind)))
+          (update-turtle env :direction newd))))))
+
 
 ;;;; Forward
 
@@ -119,24 +148,31 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
         (incf current-index)
         (push (cons oldp newp) lines)))))
 
-(defmethod eval ((fwd forward) (env vrml-environment))
-  (with-slots (delta) fwd
-    (let* ((turtle (turtle env))
-           (oldp (position turtle))
-           (newp (forward-pos turtle delta))
+(defmethod eval ((forward forward) (env vrml-environment))
+  (let ((oldp (position (turtle env))))
+    (call-next-method)
+    (let* ((newp (position (turtle env)))
            (diffp (v- newp oldp)))
-      (update-turtle env :position newp)
-      (let* ((branch (make-instance 'vrml-shape
-                                    :geometry (make-instance 'vrml-cylinder
-                                                             :height delta)))
+      (with-slots (delta) forward
+        (let* ((branch (make-instance 'vrml-shape
+                                      :geometry (make-instance 'vrml-cylinder
+                                                               :height delta)))
 
-             (translation (make-instance 'vrml-translation
-                                         :vect (v* (v 0.5 0.5 0.5)
-                                                   diffp)
-                                         :children (list branch))))
-        (with-slots (transform) env
-          (with-slots (children) transform
-            (setf children (append children
-                                   (list (make-instance 'vrml-shape
-                                                        :geometry translation))))
-            (setf transform translation)))))))
+               (translation (make-instance 'vrml-translation
+                                           :vect diffp
+                                           :children (list branch))))
+          (with-slots (transform) env
+            (with-slots (children) transform
+              (appendf children (list (make-instance 'vrml-shape
+                                                     :geometry translation)))
+              (setf transform translation))))))))
+
+(defmethod eval ((turn turn) (env vrml-environment))
+  (call-next-method) ; updates the turtle
+  (with-slots ((theta angle)) turn
+    (declare (type V3 theta))
+    (let ((rotation (make-instance 'vrml-rotation :vect theta)))
+      (with-slots (transform) env
+        (with-slots (children) transform
+          (appendf children (list rotation))
+          (setf transform rotation))))))

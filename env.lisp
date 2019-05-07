@@ -235,7 +235,7 @@
   (sxhash (map 'list #'identity v)))
 (sb-ext:define-hash-table-test v= sxhash-vect)
 
-(defclass obj-environment (environment)
+(defclass obj-environment (3d-environment)
   ((vertices :initform (make-hash-table :test 'v=)
              :accessor vertices)
    (lines :initform ()
