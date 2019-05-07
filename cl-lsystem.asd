@@ -13,7 +13,8 @@
                 :rte
                 :gutils
                 :closer-mop
-                :vecto)
+                :vecto
+                :cl-arrows)
 
   :serial t
   :components ((:file "package")

@@ -1,15 +1,41 @@
 (in-package :cl-lsystem)
 
-(defstruct turtle
-  (position (v0 3) :type vect)
-  (orientation (v0 3) :type vect))
+;; NOTE `direction' should always be a unit vector
+(defclass turtle2D ()
+  ((position :initform (v 0 0)
+             :initarg :position
+             :accessor position
+             :type V2)
+   (direction :initform (v 1 0)
+             :initarg :direction
+             :accessor direction
+             :type V2)))
+
+;; NOTE `direction' should always be a unit vector
+(defclass turtle3D ()
+  ((position :initform (v 0 0 0)
+             :initarg :position
+             :accessor position
+             :type V3)
+   (direction :initform (v 1 0 0)
+              :initarg :direction
+              :accessor direction
+              :type V3)))
 
 (defclass environment ()
-  ((turtle :initform (make-turtle)
-           :accessor turtle)
-   (stack :initform ()
+  ((stack :initform ()
           :accessor env-stack
           :type list)))
+
+(defclass 2d-environment (environment)
+  ((turtle :initform (make-instance 'turtle2D)
+           :type turtle2D
+           :accessor turtle)))
+
+(defclass 3d-environment (environment)
+  ((turtle :initform (make-instance 'turtle3D)
+           :type turtle3D
+           :accessor turtle)))
 
 ;; env initialization in a initialize-instance :after method
 
@@ -19,19 +45,20 @@
 (defgeneric unstack (env)
   (:method-combination progn :most-specific-first))
 
-(defgeneric update-turtle (env &key position orientation)
-  (:method ((env environment) &key position orientation)
+(defgeneric update-turtle (env &key position direction)
+  (:method ((env environment) &key position direction)
     (let ((turtle (turtle env)))
       (when position
-        (setf (turtle-position turtle) position))
-      (when orientation
-        (setf (turtle-orientation turtle) orientation)))))
+        (setf (position turtle) position))
+      (when direction
+        (setf (direction turtle) direction)))))
 
 (defmethod stack progn ((env environment))
   (with-slots (turtle) env
     (push turtle (env-stack env))
-    (setf turtle (make-turtle :position (turtle-position turtle)
-                              :orientation (turtle-orientation turtle)))))
+    (setf turtle (make-instance (class-of turtle)
+                                :position (position turtle)
+                                :direction (direction turtle)))))
 
 (defmethod unstack progn ((env environment))
   (setf (turtle env) (pop (env-stack env))))
@@ -40,7 +67,7 @@
 ;;;; PNG using VECTO
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass png-environment (environment)
+(defclass png-environment (2d-environment)
   ((vecto-graphics-state :accessor vecto-graphics-state)
    (width :initform 2000
           :initarg :width)
@@ -52,8 +79,11 @@
 
 
 (defmethod initialize-instance :after ((env png-environment) &key)
+  ;; setup vecto's graphic context
   (setf (vecto-graphics-state env)
         (make-instance 'vecto::graphics-state))
+
+  ;; setup the context (brush & origin position)
   (with-slots (width height origin) env
     (vecto::state-image (vecto-graphics-state env) width height)
     (let* ((translation (v+ (v (/ width 2)
@@ -65,7 +95,8 @@
                                     (vecto:set-rgb-stroke 0.0 0.0 0.0)
                                     (vecto:set-line-width 2)
                                     (vecto:translate (vx translation) (vy translation))
-                                    (vecto:rectangle (vx -translation) (vy -translation) width height)
+                                    (vecto:rectangle (vx -translation) (vy -translation)
+                                                     width height)
                                     (vecto:move-to 0 0))))))
 
 (defgeneric eval-in-graphics-state (env fun)
@@ -84,7 +115,7 @@
 ;;;; VRML (.wrl)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass vrml-environment (environment)
+(defclass vrml-environment (3d-environment)
   ((shapes :initform (make-hash-table) ; shape names are symbols, so eql is ok
            :initarg :shapes
            :accessor shapes

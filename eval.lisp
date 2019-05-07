@@ -14,11 +14,30 @@
   (declare (ignore unstack))
   (unstack env))
 
-(defmethod eval ((turn turn) (env environment))
+
+(defun 2d-rotation-matrix (theta)
+  (declare (type real theta))
+  (let ((m (mat ((cos theta) (sin theta))
+                ((- (sin theta)) (cos theta)))))
+  (the (matrix 2 2) m)))
+
+(defun rotate-2D-direction (theta d)
+  (declare (type real theta)
+           (type V2 d))
+  (let ((newd (-> d
+                 v->m
+                 (m* (2d-rotation-matrix theta))
+                 m->v
+                 v-unit)))
+    (the V2 newd)))
+
+(defmethod eval ((turn turn) (env 2d-environment))
   (with-slots (angle) turn
-    (let ((turtle (turtle env)))
-      (update-turtle env :orientation (v+ (turtle-orientation turtle)
-                                          angle)))))
+    (declare (type real angle)) ; => in a 2D space, `angle' is only a scalar
+    (let* ((turtle (turtle env))
+           (newd (rotate-2D-direction angle
+                                      (direction turtle))))
+      (update-turtle env :direction newd))))
 
 
 #|
@@ -46,14 +65,15 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
             (* H (sin b)))))))
 
 (defun forward-pos (turtle delta)
-  (let ((oldp (turtle-position turtle)))
-    (v+ oldp (oriented-delta (turtle-orientation turtle)
-                             (v delta delta delta)))))
+  (with-slots (position direction) turtle
+    (v+ position
+        (v* (scalar->v delta (v-dim direction))
+            direction))))
 
 (defmethod eval ((fwd forward) (env png-environment))
   (with-slots (delta) fwd
     (let* ((turtle (turtle env))
-           (oldp (turtle-position turtle))
+           (oldp (position turtle))
            (newp (forward-pos turtle delta)))
       (update-turtle env :position newp)
       (eval-in-graphics-state env (lambda ()
@@ -63,7 +83,7 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
 (defmethod eval ((fwd forward) (env obj-environment))
   (with-slots (delta) fwd
     (let* ((turtle (turtle env))
-           (oldp (turtle-position turtle))
+           (oldp (position turtle))
            (newp (forward-pos turtle delta)))
       (update-turtle env :position newp)
       (with-slots (vertices lines current-index) env
@@ -74,7 +94,7 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
 (defmethod eval ((fwd forward) (env vrml-environment))
   (with-slots (delta) fwd
     (let* ((turtle (turtle env))
-           (oldp (turtle-position turtle))
+           (oldp (position turtle))
            (newp (forward-pos turtle delta))
            (diffp (v- newp oldp)))
       (update-turtle env :position newp)
