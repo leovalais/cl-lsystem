@@ -1,5 +1,8 @@
 (in-package :cl-lsystem)
 
+
+;;;; Common instructions
+
 (defgeneric eval (instruction env)
   (:documentation "Evaluates the instruction for the given environment."))
 
@@ -15,13 +18,29 @@
   (unstack env))
 
 
+(defun move-by-delta (turtle delta)
+  (with-slots (position direction) turtle
+    (v+ position
+        (v* (scalar->v delta (v-dim direction))
+            direction))))
+
+(defmethod eval ((jump jump) (env environment))
+  (assert (typep env '(or 2d-environment 3d-environment)))
+  (let* ((turtle (turtle env))
+         (newp (move-by-delta turtle
+                              (with-slots (delta) jump
+                                delta))))
+    (update-turtle env :position newp)))
+
+;;;; Turn
+
 (defun 2d-rotation-matrix (theta)
   (declare (type real theta))
   (let ((m (mat ((cos theta) (sin theta))
                 ((- (sin theta)) (cos theta)))))
   (the (matrix 2 2) m)))
 
-(defun rotate-2D-direction (theta d)
+(defun rotate-2d-direction (theta d)
   (declare (type real theta)
            (type V2 d))
   (let ((newd (-> d
@@ -35,7 +54,7 @@
   (with-slots (angle) turn
     (declare (type real angle)) ; => in a 2D space, `angle' is only a scalar
     (let* ((turtle (turtle env))
-           (newd (rotate-2D-direction angle
+           (newd (rotate-2d-direction angle
                                       (direction turtle))))
       (update-turtle env :direction newd))))
 
@@ -76,9 +95,18 @@ U Cos[a] Cos[b] - L Cos[b] Sin[a] - H Sin[b]
            (oldp (position turtle))
            (newp (forward-pos turtle delta)))
       (update-turtle env :position newp)
+
+;;;; Forward
+
+(defmethod eval ((forward forward) (env png-environment))
+  (v-bind (oldx oldy)
+      (position (turtle env))
+    (call-next-method) ; updates the turtle (cf. eval(jump environment))
+    (v-bind (newx newy)
+        (position (turtle env))
       (eval-in-graphics-state env (lambda ()
-                                    (vecto:move-to (vx oldp) (vy oldp))
-                                    (vecto:line-to (vx newp) (vy newp)))))))
+                                    (vecto:move-to oldx oldy)
+                                    (vecto:line-to newx newy))))))
 
 (defmethod eval ((fwd forward) (env obj-environment))
   (with-slots (delta) fwd

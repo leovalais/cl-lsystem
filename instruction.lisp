@@ -31,12 +31,12 @@
   ()
   (:metaclass singleton-instruction))
 
-(defclass forward ()
+(defclass jump ()
   (delta)
   (:metaclass instruction)
   (:constructor (delta)))
 
-(defclass jump ()
+(defclass forward (jump)
   (delta)
   (:metaclass instruction)
   (:constructor (delta)))
