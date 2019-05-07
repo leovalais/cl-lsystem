@@ -156,6 +156,7 @@
       (with-slots (delta) forward
         (let* ((branch (make-instance 'vrml-shape
                                       :geometry (make-instance 'vrml-cylinder
+                                                               :radius 0.1
                                                                :height delta)))
 
                (translation (make-instance 'vrml-translation

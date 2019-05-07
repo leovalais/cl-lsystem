@@ -61,9 +61,9 @@
 (defparameter *tree-a*
   '(:axiom (F F F F F A)
     :rules ((A (F [ + + A L ] [ - - A L ] > > > A)))
-    :initial-orientation (v (/ pi 2) (/ pi 2) 0)
+    :initial-orientation (v 0 0 (/ pi 2))
     :turtle ((F (forward 5))
-             (L (noop))
+             (L (forward 2))
              (A (noop))
              (B (noop))
              ([ (stack))
