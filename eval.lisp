@@ -75,8 +75,8 @@
 
 (defun yaw-3d-rotation-matrix (theta)
   (declare (type real theta))
-  (let ((m (mat ((cos theta) (- (sin theta)) 0)
-                ((sin theta) (cos theta) 0)
+  (let ((m (mat ((cos theta) (sin theta) 0)
+                ((- (sin theta)) (cos theta) 0)
                 (0 0 1))))
     (the (matrix 3 3) m)))
 
@@ -100,11 +100,9 @@
            (type (float (0.0) *) epsilon))
   (flet ((~zerop (number) ; read "approximately zerop" :D
            (<= (- epsilon) number epsilon)))
-    (let* ((indexes (loop :for i :below (v-dim v)
-                          :collecting i))
-           (non-zero-indexes (remove-if #'~zerop indexes
-                                        :key (lambda (i)
-                                               (v[] i v)))))
+    (let ((non-zero-indexes (remove-if #'~zerop '(0 1 2)
+                                       :key (lambda (i)
+                                              (v[] i v)))))
       (cond
         ((null non-zero-indexes)
          (error "if you want to rotate, why is your vector ~a null, you dumba**?" v))
@@ -138,15 +136,16 @@
                                     (vecto:line-to newx newy))))))
 
 (defmethod eval ((fwd forward) (env obj-environment))
-  (with-slots (delta) fwd
-    (let* ((turtle (turtle env))
-           (oldp (position turtle))
-           (newp (forward-pos turtle delta)))
-      (update-turtle env :position newp)
-      (with-slots (vertices lines current-index) env
-        (setf (gethash newp vertices) current-index)
-        (incf current-index)
-        (push (cons oldp newp) lines)))))
+  ;; (with-slots (delta) fwd
+  ;;   (let* ((turtle (turtle env))
+  ;;          (oldp (position turtle))
+  ;;          (newp (forward-pos turtle delta)))
+  ;;     (update-turtle env :position newp)
+  ;;     (with-slots (vertices lines current-index) env
+  ;;       (setf (gethash newp vertices) current-index)
+  ;;       (incf current-index)
+  ;;       (push (cons oldp newp) lines))))
+  (warn "obj-environment not supported anymore"))
 
 (defmethod eval ((forward forward) (env vrml-environment))
   (let ((oldp (position (turtle env))))
@@ -154,11 +153,15 @@
     (let* ((newp (position (turtle env)))
            (diffp (v- newp oldp)))
       (with-slots (delta) forward
-        (let* ((branch (make-instance 'vrml-shape
+        (let* ((material (make-instance 'vrml-material
+                                        :diffuse (if (= delta 5)
+                                                     (v 0.3 0.3 0.3)
+                                                     (v 0.1 0.7 0.2))))
+               (branch (make-instance 'vrml-shape
+                                      :material material
                                       :geometry (make-instance 'vrml-cylinder
                                                                :radius 0.1
                                                                :height delta)))
-
                (translation (make-instance 'vrml-translation
                                            :vect diffp
                                            :children (list branch))))

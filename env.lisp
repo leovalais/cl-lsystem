@@ -139,6 +139,12 @@
              :accessor geometry
              :initarg :geometry)))
 
+(defclass vrml-material ()
+  ((diffuse :initform (v 0.0 0.0 0.0)
+            :type (vect 3 (float 0.0 1.0))
+            :accessor diffuse
+            :initarg :diffuse)))
+
 (defclass vrml-geometry () ())
 
 (defclass vrml-cylinder (vrml-geometry)
@@ -166,7 +172,7 @@
          :initarg :vect
          :accessor vect
          :type vect)
-   (spin :initform 1.0
+   (spin :initform 0.9
          :initarg :spin
          :accessor spin
          :type real)))
@@ -207,8 +213,15 @@
 
 (defmethod export-vrml ((shape vrml-shape))
   (format nil "~&Shape {~%~a~&~a~&}"
-          ""; (export-vrml (material shape))
+          (if nil
+              (export-vrml (material shape))
+              "")
           (export-vrml (geometry shape))))
+
+(defmethod export-vrml ((material vrml-material))
+  (with-slots (diffuse) material
+    (format nil "~&material Material {~%diffuseColor ~,3f ~,3f ~,3f~%}"
+            (vx diffuse) (vy diffuse) (vz diffuse))))
 
 (defmethod export-vrml ((cylinder vrml-cylinder))
   (format nil "~&geometry Cylinder {~%radius ~f~%height ~f~%}"
