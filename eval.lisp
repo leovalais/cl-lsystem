@@ -75,8 +75,8 @@
 
 (defun yaw-3d-rotation-matrix (theta)
   (declare (type real theta))
-  (let ((m (mat ((cos theta) (sin theta) 0)
-                ((- (sin theta)) (cos theta) 0)
+  (let ((m (mat ((cos theta) (- (sin theta)) 0)
+                ((sin theta) (cos theta) 0)
                 (0 0 1))))
     (the (matrix 3 3) m)))
 
@@ -135,17 +135,16 @@
                                     (vecto:move-to oldx oldy)
                                     (vecto:line-to newx newy))))))
 
-(defmethod eval ((fwd forward) (env obj-environment))
-  ;; (with-slots (delta) fwd
-  ;;   (let* ((turtle (turtle env))
-  ;;          (oldp (position turtle))
-  ;;          (newp (forward-pos turtle delta)))
-  ;;     (update-turtle env :position newp)
-  ;;     (with-slots (vertices lines current-index) env
-  ;;       (setf (gethash newp vertices) current-index)
-  ;;       (incf current-index)
-  ;;       (push (cons oldp newp) lines))))
-  (warn "obj-environment not supported anymore"))
+(defmethod eval ((forward forward) (env obj-environment))
+  (let ((oldp (position (turtle env))))
+    (call-next-method) ; updates the turtle's position
+    (let ((newp (position (turtle env))))
+      (add-vertice env newp)
+
+      ;; draw a line
+      (add-vertice env oldp) ; ensure last position has its vertice (last inst may have been a jump)
+      (push (cons oldp newp)
+            (lines env)))))
 
 (defmethod eval ((forward forward) (env vrml-environment))
   (let ((oldp (position (turtle env))))

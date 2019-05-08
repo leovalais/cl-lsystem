@@ -15,7 +15,7 @@
     (apply-initial-orientation lsystem env)
     (iter (for letter in-vector word)
       (let ((instruction (gethash letter (mapping lsystem))))
-        (assert instruction)
+        (assert instruction nil "no instruction for ~a" letter)
         (eval instruction env)))
     (save env filename)
     :ok))

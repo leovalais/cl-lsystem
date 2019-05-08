@@ -234,8 +234,8 @@
             (vx vect) (vy vect) (vz vect)
             (mapcar #'export-vrml children))))
 
-(defmethod export-vrml ((translation vrml-rotation))
-  (with-slots (vect spin children) translation
+(defmethod export-vrml ((rotation vrml-rotation))
+  (with-slots (vect spin children) rotation
     (format nil "~&Transform {~%rotation ~f ~f ~f ~f~%children [~{~&~a~}~&]~%}"
             (vx vect) (vy vect) (vz vect) spin
             (mapcar #'export-vrml children))))
@@ -257,11 +257,17 @@
           :accessor faces)
    (current-index :initform 1)))
 
-(defmethod initialize-instance :after ((env obj-environment) &key)
+(defun add-vertice (env v)
+  (declare (type V3 v)
+           (type obj-environment env))
   (with-slots (vertices current-index) env
-    (setf (gethash (v 0 0 0) vertices)
-          current-index)
-    (incf current-index)))
+    (unless (gethash v vertices)
+      (setf (gethash v vertices)
+            current-index)
+      (incf current-index))))
+
+(defmethod initialize-instance :after ((env obj-environment) &key)
+  (add-vertice env (v 0 0 0)))
 
 (defmethod save ((env obj-environment) filename)
   (with-open-file (obj (format nil "~a.obj" filename)
@@ -278,7 +284,7 @@
                (dump-f (f)
                  (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
         (maphash-keys #'dump-v vertices)
-        (dump-v (v 0 0 0))
+        ;; (dump-v (v 0 0 0))
         (mapc #'dump-f faces)
         (mapc #'dump-l lines))))
   (values))
