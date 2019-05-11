@@ -213,9 +213,8 @@
 
 (defmethod export-vrml ((shape vrml-shape))
   (format nil "~&Shape {~%~a~&~a~&}"
-          (if nil
-              (export-vrml (material shape))
-              "")
+          ;; (export-vrml (material shape))
+          ""
           (export-vrml (geometry shape))))
 
 (defmethod export-vrml ((material vrml-material))

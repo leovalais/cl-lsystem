@@ -14,6 +14,7 @@
                 :gutils
                 :closer-mop
                 :vecto
+                :trivia
                 :cl-arrows)
 
   :serial t

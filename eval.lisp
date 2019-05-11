@@ -135,6 +135,77 @@
                                     (vecto:move-to oldx oldy)
                                     (vecto:line-to newx newy))))))
 
+
+(defun normal-plan-base (u &optional (runtime-check t))
+  "Returns the unit vectors (v, w) such as (u, v, w) is a base of R^3. u /= 0."
+  (multiple-value-bind (v w)
+      (trivia:match u
+        ;; u is null => never happens... theoretically at least :'\
+        ((vector 0 0 0)
+         (error "normal-plan-base: u cannot be null"))
+
+        ;; two coordinates are null => the base is the unit vectors of the other axes
+        ((vector _ 0 0) (values (v 0 1 0)
+                                (v 0 0 1)))
+        ((vector _ 0 0) (values (v 0 1 0)
+                                (v 0 0 1)))
+        ((vector 0 _ 0) (values (v 1 0 0)
+                                (v 0 0 1)))
+        ((vector 0 0 _) (values (v 1 0 0)
+                                (v 0 1 0)))
+
+        ;; only one coordinate is null => it's just like computing the a normal vector
+        ;; in the 2D plane => n = (-b a)
+        ;; the other (3D) normal vector w is just the unit vector of the axis orthogonal
+        ;; to the (u, v) plane
+        ((vector a b 0) (values (v (- b) a 0)
+                                (v     0 0 1)))
+        ((vector a 0 b) (values (v (- b) 0 a)
+                                (v     0 1 0)))
+        ((vector 0 a b) (values (v 0 (- b) a)
+                                (v 1     0 0)))
+
+        #|
+In the general case, given a vector $\vec u = (a\ b\ c)$, we want to find the vectors $(\vec v, \vec w)$ such as
+$(\vec u, \vec v, \vec w)$ is a base of the 3D space ($\mathbb R^3$). I.e.:
+$$\vec u \cdot \vec v = 0$$
+$$\vec u \cdot \vec w = 0$$
+$$\vec v \cdot \vec w = 0$$
+
+Trivially, we can find that $\vec v = (-b\ a\ 0)$ is a possible value that satisfies the first equation
+$\vec u \cdot \vec v = \vec 0$. Proof:
+\begin{align*}
+\vec u \cdot \vec v &= a \times (-b) + b \times a + c \times 0\\
+                    &= 0
+\end{align*}
+
+For $\vec w$ though, we need to find coordinates which both satisfies the constraints $\vec u \cdot \vec w = 0$
+and $\vec v \cdot \vec w = 0$. By fiddling a little with $a$, $b$ and $c$, we can prove that
+$\vec w = (-c \cdot a\quad -c \cdot b\quad a^2 + b^2)$ is a valid vector:
+\begin{align*}
+\vec u \cdot \vec w &= a \times (-c \cdot a) + b \times (-c \cdot b) + c \times (a^2 + b^2)\\
+                    &= -a^2 \times c - b^2 \times c + c \times (a^2 + b^2)\\
+                    &= c \times (-a^2 - b^2 + a^2 + b^2)\\
+                    &= c \times 0\\
+                    &= 0
+\end{align*}
+\begin{align*}
+\vec v \cdot \vec w &= -b \times (-c \cdot a) + a \times (-c \cdot b) + 0 \times (a^2 + b^2)\\
+                    &= a \cdot b \cdot c - a \cdot b \cdot c\\
+                    &= 0
+\end{align*}
+|#
+        ((vector a b c) (values (v (- b) a 0)
+                                (v (* (- c) a)
+                                   (* (- c) b)
+                                   (+ (* a a) (* b b))))))
+    (when runtime-check
+      (assert (zerop (v^ u v)))
+      (assert (zerop (v^ u w)))
+      (assert (zerop (v^ v w))))
+    (the (values V3 V3)
+         (values v w))))
+
 (defmethod eval ((forward forward) (env obj-environment))
   (let ((oldp (position (turtle env))))
     (call-next-method) ; updates the turtle's position

@@ -1,6 +1,6 @@
 (in-package :cl-lsystem)
 
-(defun apply-initial-orientation(lsystem env)
+(defun apply-initial-orientation (lsystem env)
   (if-let (io (initial-orientation lsystem))
     (let ((turn (make-instance 'turn)))
       (setf (slot-value turn 'angle)
