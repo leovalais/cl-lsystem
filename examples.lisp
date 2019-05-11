@@ -55,8 +55,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; 3D L-Systems
 
-(defun standard-3d-turtle (delta)
-  `((F (forward 3))
+(defun standard-3d-turtle (delta &optional (d 5))
+  `((F (forward ,d))
     ([ (stack))
     (] (unstack))
     (< (turn (v ,delta 0 0)))
@@ -105,6 +105,6 @@
     :rules ((A (F [ & B ] [ ^ B ] [ + B ] [ - B ]))
             (B (F A)))
     ;; :initial-orientation (v 0 0 (/ pi 2))
-    :turtle (,@(standard-3d-turtle *tree-test-delta*)
+    :turtle (,@(standard-3d-turtle *tree-test-delta* 8)
              (A (noop))
              (B (noop)))))

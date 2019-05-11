@@ -136,7 +136,7 @@
                                     (vecto:line-to newx newy))))))
 
 
-(defun normal-plan-base (u &optional (runtime-check t))
+(defun normal-plan-base (u)
   "Returns the unit vectors (v, w) such as (u, v, w) is a base of R^3. u /= 0."
   (multiple-value-bind (v w)
       (trivia:match u
@@ -199,23 +199,44 @@ $\vec w = (-c \cdot a\quad -c \cdot b\quad a^2 + b^2)$ is a valid vector:
                                 (v (* (- c) a)
                                    (* (- c) b)
                                    (+ (* a a) (* b b))))))
-    (when runtime-check
-      (assert (zerop (v^ u v)))
-      (assert (zerop (v^ u w)))
-      (assert (zerop (v^ v w))))
+    (flet ((~zerop (x &optional (epsilon 0.000000001))
+             (<= (- epsilon) x epsilon)))
+      (assert (~zerop (v^ u v)))
+      (assert (~zerop (v^ u w)))
+      (assert (~zerop (v^ v w))))
     (the (values V3 V3)
          (values v w))))
 
 (defmethod eval ((forward forward) (env obj-environment))
-  (let ((oldp (position (turtle env))))
+  (let* ((turtle (turtle env))
+         (oldp (position turtle))
+         (u (direction turtle)))
     (call-next-method) ; updates the turtle's position
     (let ((newp (position (turtle env))))
       (add-vertice env newp)
-
-      ;; draw a line
       (add-vertice env oldp) ; ensure last position has its vertice (last inst may have been a jump)
-      (push (cons oldp newp)
-            (lines env)))))
+      (multiple-value-bind (v w)
+          (normal-plan-base u)
+        (let* ((face (list (v+ v w)
+                           (v+ (v- v) w)
+                           (v- w)))
+               (base-face (mapcar (lambda (vertice)
+                                    (v+ vertice oldp))
+                                  face))
+               (other-face (mapcar (lambda (vertice)
+                                    (v+ vertice newp))
+                                  face)))
+          (with-slots (faces) env
+            (destructuring-bind ((a b c) . (alpha beta gamma))
+                (cons base-face other-face)
+              (push (list a b beta alpha) faces)
+              (push (list c a alpha gamma) faces)
+              (push (list b c gamma beta) faces)
+              (mapc (lambda (vertice)
+                      (add-vertice env vertice))
+                    (list a b c alpha beta gamma)))
+            (push base-face faces)
+            (push other-face faces)))))))
 
 (defmethod eval ((forward forward) (env vrml-environment))
   (let ((oldp (position (turtle env))))
