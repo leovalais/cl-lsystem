@@ -41,10 +41,12 @@
             :initarg :mapping
             :accessor mapping
             :type letter-mapping)
-   (initial-orientation :initform (v 0 0 0)
+   (initial-orientation :initform nil
                         :initarg :initial-orientation
                         :accessor initial-orientation
-                        :type V3)))
+                        :type (or null
+                                  real
+                                  V3))))
 
 (deftype letter-mapping ()
   'hash-table)

@@ -13,7 +13,9 @@
                 :rte
                 :gutils
                 :closer-mop
-                :vecto)
+                :vecto
+                :trivia
+                :cl-arrows)
 
   :serial t
   :components ((:file "package")
