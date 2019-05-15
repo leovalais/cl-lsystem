@@ -2,22 +2,22 @@
 
 ;; NOTE `direction' should always be a unit vector
 (defclass turtle2D ()
-  ((position :initform (v 0 0)
+  ((position :initform (v 0.0 0.0)
              :initarg :position
              :accessor position
              :type V2)
-   (direction :initform (v 1 0)
+   (direction :initform (v 1.0 0.0)
              :initarg :direction
              :accessor direction
              :type V2)))
 
 ;; NOTE `direction' should always be a unit vector
 (defclass turtle3D ()
-  ((position :initform (v 0 0 0)
+  ((position :initform (v 0.0 0.0 0.0)
              :initarg :position
              :accessor position
              :type V3)
-   (direction :initform (v 1 0 0)
+   (direction :initform (v 1.0 0.0 0.0)
               :initarg :direction
               :accessor direction
               :type V3)))

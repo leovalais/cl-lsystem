@@ -99,7 +99,7 @@
              (A (noop))
              (B (noop)))))
 
-(defparameter *tree-test-delta* (deg->rad 20))
+(defparameter *tree-test-delta* (/ pi 2))
 (defparameter *tree-test*
   `(:axiom (A)
     :rules ((A (F [ & B ] [ ^ B ] [ + B ] [ - B ]))
