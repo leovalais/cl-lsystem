@@ -1,26 +1,97 @@
 (in-package :cl-lsystem)
 
-;; NOTE `direction' should always be a unit vector
-(defclass turtle2D ()
-  ((position :initform (v 0.0 0.0)
+(defclass turtle ()
+  ((position :initform nil
              :initarg :position
              :accessor position
-             :type V2)
-   (direction :initform (v 1.0 0.0)
-             :initarg :direction
-             :accessor direction
-             :type V2)))
+             :type vect)))
+
+(defgeneric copy (turtle)
+  (:method ((turtle turtle))
+    (make-instance 'turtle :position (position turtle))))
 
 ;; NOTE `direction' should always be a unit vector
-(defclass turtle3D ()
-  ((position :initform (v 0.0 0.0 0.0)
-             :initarg :position
-             :accessor position
-             :type V3)
-   (direction :initform (v 1.0 0.0 0.0)
+(defclass turtle2d (turtle)
+  ((direction :initform (v 1.0 0.0)
               :initarg :direction
               :accessor direction
-              :type V3)))
+              :type V2)))
+
+(defmethod initialize-instance :after ((turtle turtle2d) &key)
+  (with-slots (position) turtle
+    (unless (typep position 'V2)
+      (setf position (v 0.0 0.0)))))
+
+(defmethod copy ((turtle turtle2d))
+  (make-instance 'turtle2d
+                 :position (position turtle)
+                 :direction (direction turtle)))
+
+(defclass turtle3d (turtle)
+  ((space :initform (mat (1.0 0.0 0.0)
+                         (0.0 1.0 0.0)
+                         (0.0 0.0 1.0))
+          :initarg :space
+          :accessor space
+          :type (matrix 3 3)))
+  (:documentation
+   "A 3D turtle is a position and a unit matrix [H L U] `direction' which form a base of the 3D space.
+- H is the direction of the `head' of the turtle.
+- L is the direction of the `left' of the turtle.
+- U is the direction above the turtle (see `up')."))
+
+(defmethod initialize-instance :after ((turtle turtle3d) &key)
+  (with-slots (position) turtle
+    (unless (typep position 'V3)
+      (setf position (v 0.0 0.0 0.0)))))
+
+(defmethod copy ((turtle turtle3d))
+  (make-instance 'turtle3d
+                 :position (position turtle)
+                 :space (space turtle)))
+
+(defgeneric head (turtle3d)
+  (:method ((turtle3d turtle3d))
+    (m-col[] 0 (space turtle3d))))
+;; FIXME unary generic method already declared in `definitions.lisp' for `rule'
+(defmethod left ((turtle3d turtle3d))
+  (m-col[] 1 (space turtle3d)))
+(defgeneric up (turtle3d)
+  (:method ((turtle3d turtle3d))
+    (m-col[] 2 (space turtle3d))))
+
+(defgeneric (setf head) (head turtle3d)
+  (:method (head (turtle3d turtle3d))
+    (setf (m-col[] 0 (space turtle3d))
+          head)))
+(defgeneric (setf left) (left turtle3d)
+  (:method (left (turtle3d turtle3d))
+    (setf (m-col[] 1 (space turtle3d))
+          left)))
+(defgeneric (setf up) (up turtle3d)
+  (:method (up (turtle3d turtle3d))
+    (setf (m-col[] 2 (space turtle3d))
+          up)))
+
+(defmacro with-3d-turtle-space ((head left up) turtle &body body)
+  (once-only (turtle)
+    (flet ((binding-for (var f)
+             (if var
+                 `((,var (,f ,turtle)))
+                 ())))
+      `(let (,@(binding-for head 'head)
+             ,@(binding-for left 'left)
+             ,@(binding-for up 'up))
+         ,@body))))
+
+(defun space-unit (space)
+  "Makes the vectors of a 3D space base unit (yet equivalent) vectors."
+  (declare (type (matrix 3 3) space))
+  (the (matrix 3 3)
+       (m (v-unit (m-row[] 0 space))
+          (v-unit (m-row[] 1 space))
+          (v-unit (m-row[] 2 space)))))
+
 
 (defclass environment ()
   ((stack :initform ()
@@ -45,23 +116,33 @@
 (defgeneric unstack (env)
   (:method-combination progn :most-specific-first))
 
-(defgeneric update-turtle (env &key position direction)
-  (:method ((env environment) &key position direction)
-    (let ((turtle (turtle env)))
-      (when position
-        (setf (position turtle) position))
-      (when direction
-        (setf (direction turtle) direction)))))
+(defmacro with-updated-turtle ((turtle env) &body body) ; TODO
+  (once-only (env)
+    `(setf (turtle ,env)
+           (let ((,turtle (copy (turtle ,env))))
+             ,@body
+             ,turtle))))
+
+(defun update-turtle (env &key position
+                            direction
+                            space head left up)
+  (with-updated-turtle (turtle env)
+    (when position (setf (position turtle) position))
+    (when direction (setf (direction turtle) direction))
+    (when space (setf (space turtle) space))
+    (when head (setf (head turtle) head))
+    (when left (setf (left turtle) left))
+    (when up (setf (up turtle) up))))
+
 
 (defmethod stack progn ((env environment))
   (with-slots (turtle) env
     (push turtle (env-stack env))
-    (setf turtle (make-instance (class-of turtle)
-                                :position (position turtle)
-                                :direction (direction turtle)))))
+    (setf turtle (copy turtle))))
 
 (defmethod unstack progn ((env environment))
-  (setf (turtle env) (pop (env-stack env))))
+  (setf (turtle env)
+        (pop (env-stack env))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; PNG using VECTO

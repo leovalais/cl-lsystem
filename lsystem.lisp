@@ -1,9 +1,11 @@
 (in-package :cl-lsystem)
 
 (defun apply-initial-direction (lsystem env)
-  (if-let (d (initial-direction lsystem))
-    (setf (direction (turtle env))
-          d)))
+  (declare (ignore lsystem env))
+  ;; (if-let (d (initial-direction lsystem))
+  ;;   (setf (direction (turtle env))
+  ;;         d))
+  )
 
 (defun process (sexp n &optional
                          (env (make-instance 'png-environment))
@@ -18,9 +20,9 @@
     (save env filename)
     :ok))
 
-(defun tree-test (&optional (n 6) (filename "tree-test"))
-  (when-let (f (probe-file (format nil "~a.obj" filename)))
-    (format t "~&~a deleted" f)
-    (delete-file f))
-  (format t "~&generating *tree-test* for n=~a into ~a.obj" n filename)
-  (process *tree-test* n (make-instance 'obj-environment) filename))
+;; (defun tree-test (&optional (n 6) (filename "tree-test"))
+;;   (when-let (f (probe-file (format nil "~a.obj" filename)))
+;;     (format t "~&~a deleted" f)
+;;     (delete-file f))
+;;   (format t "~&generating *tree-test* for n=~a into ~a.obj" n filename)
+;;   (process *tree-test* n (make-instance 'obj-environment) filename))

@@ -3,5 +3,6 @@
   (:shadow
    eval ; cl
    position ; cl (turtle slot)
+   space ; cl (turtle3D)
    save) ; gutils
   (:export process))
