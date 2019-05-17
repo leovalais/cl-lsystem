@@ -1,6 +1,6 @@
 (in-package :cl-lsystem)
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Common instructions
 
 (defgeneric eval (instruction env)
@@ -23,6 +23,9 @@
       (v* (scalar->v delta (v-dim direction))
           direction)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; 2D environment
+
 (defmethod eval ((jump jump) (env 2d-environment))
   (with-updated-turtle (turtle env)
     (with-slots (position direction) turtle
@@ -31,30 +34,20 @@
                            (with-slots (delta) jump
                              delta))))))
 
-(defmethod eval ((jump jump) (env 3d-environment))
-  (with-updated-turtle (turtle env)
-    (with-slots (position) turtle
-      (setf position
-            (move-by-delta position (head turtle)
-                           (with-slots (delta) jump
-                             delta))))))
-
-;;;; Turn
-
 (defun 2d-rotation-matrix (theta)
   (declare (type real theta))
   (let ((m (mat ((cos theta) (sin theta))
                 ((- (sin theta)) (cos theta)))))
-  (the (matrix 2 2) m)))
+    (the (matrix 2 2) m)))
 
 (defun rotate-2d-direction (theta d)
   (declare (type real theta)
            (type V2 d))
   (let ((newd (-> d
-                 v->m
-                 (m* (2d-rotation-matrix theta))
-                 m->v
-                 v-unit)))
+                  v->m
+                  (m* (2d-rotation-matrix theta))
+                  m->v
+                  v-unit)))
     (the V2 newd)))
 
 (defmethod eval ((turn turn) (env 2d-environment))
@@ -64,6 +57,17 @@
            (newd (rotate-2d-direction angle
                                       (direction turtle))))
       (update-turtle env :direction newd))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; 3D environment
+
+(defmethod eval ((jump jump) (env 3d-environment))
+  (with-updated-turtle (turtle env)
+    (with-slots (position) turtle
+      (setf position
+            (move-by-delta position (head turtle)
+                           (with-slots (delta) jump
+                             delta))))))
 
 ;;; NOTE roll => R(x), pitch = R(y), yaw = R(z)
 (defun roll-3d-rotation-matrix (theta)
@@ -128,7 +132,9 @@
           (setf space
                 (rotate-3d-space theta kind space)))))))
 
-;;;; Forward
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; PNG environment
 
 (defmethod eval ((forward forward) (env png-environment))
   (v-bind (oldx oldy)
@@ -140,6 +146,9 @@
                                     (vecto:move-to oldx oldy)
                                     (vecto:line-to newx newy))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; OBJ environment
 
 (defmethod eval ((forward forward) (env obj-environment))
   (let* ((turtle (turtle env))
@@ -169,6 +178,10 @@
                     (list a b c alpha beta gamma)))
             (push base-face faces)
             (push other-face faces)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; VRML environment
 
 (defmethod eval ((forward forward) (env vrml-environment))
   (let ((oldp (position (turtle env))))
