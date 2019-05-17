@@ -80,7 +80,6 @@
 (defparameter *tree-b-delta* (deg->rad 30))
 (defparameter *tree-b*
   `(:axiom (F A)
-    ;;  A = f[^Bl]>>[^Bl]>>A, B = f[-Bl]B
     :rules ((A (F [ ^ B L ] > > [ ^ B L ] > > A))
             (B (F [ - B L ] B)))
     :turtle (,@(standard-3d-turtle *tree-b-delta*)

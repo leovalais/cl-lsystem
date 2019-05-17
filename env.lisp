@@ -7,7 +7,7 @@
   ((position :initform nil
              :initarg :position
              :accessor position
-             :type vect)))
+             :type (or null vect))))
 
 ;; NOTE `direction' should always be a unit vector
 (defclass turtle2d (turtle)
@@ -117,7 +117,15 @@
 (defclass 3d-environment (environment)
   ((turtle :initform (make-instance 'turtle3D)
            :type turtle3D
-           :accessor turtle)))
+           :accessor turtle)
+   (branch-radius :initform 1.0
+                  :initarg :branch-radius
+                  :accessor branch-radius
+                  :type float)
+   (branch-decay :initform 1.0 ; no decay
+                 :initarg :branch-decay
+                 :accessor branch-decay
+                 :type (float (0.0) 1.0))))
 
 
 (defgeneric save (env filename))
@@ -223,6 +231,20 @@
 
 (defmethod initialize-instance :after ((env obj-environment) &key)
   (add-vertice env (v 0 0 0)))
+
+(defmethod stack progn ((env obj-environment))
+  (with-slots (stack) env
+    (push (branch-radius env)
+          stack)
+    (push (branch-decay env)
+          stack)))
+
+(defmethod unstack progn ((env obj-environment))
+  (with-slots (stack) env
+    (setf (branch-decay env)
+          (pop stack))
+    (setf (branch-radius env)
+          (pop stack))))
 
 (defmethod save ((env obj-environment) filename)
   (with-open-file (obj (format nil "~a.obj" filename)

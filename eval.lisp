@@ -196,8 +196,13 @@ at origin in the plan (`u', `v'). `u' and `v' must be unit orthogonal vectors.
         (let* ((newp (position (turtle env)))
                (n 16)
                (circle (circle-in-plan v w n))
-               (c1 (scale-translate-circle 0.5 oldp circle))
-               (c2 (scale-translate-circle 0.5 newp circle)))
+               (c1 (scale-translate-circle (branch-radius env) oldp circle))
+               (c2 (scale-translate-circle (let ((new-radius (* (branch-radius env)
+                                                                (branch-decay env))))
+                                             (setf (branch-radius env)
+                                                   new-radius)
+                                             new-radius)
+                                           newp circle)))
 
           ;; add vertices of the circles
           (flet ((add (vs)
