@@ -41,13 +41,12 @@
             :initarg :mapping
             :accessor mapping
             :type letter-mapping)
-   (initial-orientation :initform nil
-                        :initarg :initial-orientation
-                        :accessor initial-orientation
-                        :type (or null
-                                  real
-                                  V3))))
+   (initial-direction :initform nil
+                      :initarg :initial-direction
+                      :accessor initial-direction
+                      :type (or null
+                                real
+                                V3))))
 
 (deftype letter-mapping ()
   'hash-table)
-  ;; '(rte:rte (:+ (rte:rte (:cat letter turtle-move)))))

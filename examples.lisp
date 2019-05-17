@@ -72,7 +72,6 @@
 (defparameter *tree-a*
   `(:axiom (F F F F F A)
     :rules ((A (F [ + + A L ] [ - - A L ] > > > A)))
-    :initial-orientation (v 0 0 (/ pi 2))
     :turtle (,@(standard-3d-turtle *tree-a-delta*)
              (L (forward 2))
              (A (noop))
@@ -94,17 +93,15 @@
   `(:axiom (F A)
     :rules ((A (^ F B > > > B > > > > > B))
             (B ([ ^ ^ F > > > > > > A ])))
-    ;; :initial-orientation (v 0 0 (/ pi 2))
     :turtle (,@(standard-3d-turtle *tree-c-delta*)
              (A (noop))
              (B (noop)))))
 
-(defparameter *tree-test-delta* (deg->rad 20))
+(defparameter *tree-test-delta* (/ pi 2))
 (defparameter *tree-test*
   `(:axiom (A)
     :rules ((A (F [ & B ] [ ^ B ] [ + B ] [ - B ]))
             (B (F A)))
-    ;; :initial-orientation (v 0 0 (/ pi 2))
     :turtle (,@(standard-3d-turtle *tree-test-delta* 8)
              (A (noop))
              (B (noop)))))
