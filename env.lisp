@@ -1,14 +1,13 @@
 (in-package :cl-lsystem)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Turtles
+
 (defclass turtle ()
   ((position :initform nil
              :initarg :position
              :accessor position
              :type vect)))
-
-(defgeneric copy (turtle)
-  (:method ((turtle turtle))
-    (make-instance 'turtle :position (position turtle))))
 
 ;; NOTE `direction' should always be a unit vector
 (defclass turtle2d (turtle)
@@ -16,16 +15,6 @@
               :initarg :direction
               :accessor direction
               :type V2)))
-
-(defmethod initialize-instance :after ((turtle turtle2d) &key)
-  (with-slots (position) turtle
-    (unless (typep position 'V2)
-      (setf position (v 0.0 0.0)))))
-
-(defmethod copy ((turtle turtle2d))
-  (make-instance 'turtle2d
-                 :position (position turtle)
-                 :direction (direction turtle)))
 
 (defclass turtle3d (turtle)
   ((space :initform (mat (1.0 0.0 0.0)
@@ -40,22 +29,37 @@
 - L is the direction of the `left' of the turtle.
 - U is the direction above the turtle (see `up')."))
 
+
+(defmethod initialize-instance :after ((turtle turtle2d) &key)
+  (with-slots (position) turtle
+    (unless (typep position 'V2)
+      (setf position (v 0.0 0.0)))))
+
 (defmethod initialize-instance :after ((turtle turtle3d) &key)
   (with-slots (position) turtle
     (unless (typep position 'V3)
       (setf position (v 0.0 0.0 0.0)))))
 
-(defmethod copy ((turtle turtle3d))
-  (make-instance 'turtle3d
-                 :position (position turtle)
-                 :space (space turtle)))
+(defgeneric copy (turtle)
+  (:method ((turtle turtle))
+    (make-instance 'turtle :position (position turtle)))
+  (:method ((turtle turtle2d))
+    (make-instance 'turtle2d
+                   :position (position turtle)
+                   :direction (direction turtle)))
+  (:method ((turtle turtle3d))
+    (make-instance 'turtle3d
+                   :position (position turtle)
+                   :space (space turtle))))
 
 (defgeneric head (turtle3d)
   (:method ((turtle3d turtle3d))
     (m-col[] 0 (space turtle3d))))
+
 ;; FIXME unary generic method already declared in `definitions.lisp' for `rule'
 (defmethod left ((turtle3d turtle3d))
   (m-col[] 1 (space turtle3d)))
+
 (defgeneric up (turtle3d)
   (:method ((turtle3d turtle3d))
     (m-col[] 2 (space turtle3d))))
@@ -64,14 +68,17 @@
   (:method (head (turtle3d turtle3d))
     (setf (m-col[] 0 (space turtle3d))
           head)))
+
 (defgeneric (setf left) (left turtle3d)
   (:method (left (turtle3d turtle3d))
     (setf (m-col[] 1 (space turtle3d))
           left)))
+
 (defgeneric (setf up) (up turtle3d)
   (:method (up (turtle3d turtle3d))
     (setf (m-col[] 2 (space turtle3d))
           up)))
+
 
 (defmacro with-3d-turtle-space ((head left up) turtle &body body)
   (once-only (turtle)
@@ -93,6 +100,10 @@
           (v-unit (m-row[] 2 space)))))
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Environments
+
 (defclass environment ()
   ((stack :initform ()
           :accessor env-stack
@@ -108,13 +119,22 @@
            :type turtle3D
            :accessor turtle)))
 
-;; env initialization in a initialize-instance :after method
 
 (defgeneric save (env filename))
+
 (defgeneric stack (env)
+  (:method progn ((env environment))
+    (with-slots (turtle) env
+      (push turtle (env-stack env))
+      (setf turtle (copy turtle))))
   (:method-combination progn :most-specific-last))
+
 (defgeneric unstack (env)
+  (:method progn ((env environment))
+    (setf (turtle env)
+          (pop (env-stack env))))
   (:method-combination progn :most-specific-first))
+
 
 (defmacro with-updated-turtle ((turtle env) &body body) ; TODO
   (once-only (env)
@@ -135,18 +155,9 @@
     (when up (setf (up turtle) up))))
 
 
-(defmethod stack progn ((env environment))
-  (with-slots (turtle) env
-    (push turtle (env-stack env))
-    (setf turtle (copy turtle))))
-
-(defmethod unstack progn ((env environment))
-  (setf (turtle env)
-        (pop (env-stack env))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; PNG using VECTO
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defclass png-environment (2d-environment)
   ((vecto-graphics-state :accessor vecto-graphics-state)
@@ -192,9 +203,60 @@
     (vecto::clear-state vecto::*graphics-state*)))
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Wavefront OBJ
+
+(defun sxhash-vect (v)
+  (sxhash (map 'list #'identity v)))
+(sb-ext:define-hash-table-test v= sxhash-vect)
+
+(defclass obj-environment (3d-environment)
+  ((vertices :initform (make-hash-table :test 'v=)
+             :accessor vertices)
+   (lines :initform ()
+          :accessor lines)
+   (faces :initform ()
+          :accessor faces)
+   (current-index :initform 1)))
+
+
+(defmethod initialize-instance :after ((env obj-environment) &key)
+  (add-vertice env (v 0 0 0)))
+
+(defmethod save ((env obj-environment) filename)
+  (with-open-file (obj (format nil "~a.obj" filename)
+                       :direction :output
+                       :if-exists :supersede)
+    (with-slots (vertices lines faces) env
+      (labels ((dump-v (v)
+                 (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
+               (index-of (v)
+                 (gethash v vertices))
+               (dump-l (l)
+                 (destructuring-bind (src . dst) l
+                   (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
+               (dump-f (f)
+                 (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
+        (maphash-keys #'dump-v vertices)
+        (mapc #'dump-f faces)
+        (mapc #'dump-l lines))))
+  (values))
+
+
+(defun add-vertice (env v)
+  (declare (type V3 v)
+           (type obj-environment env))
+  (with-slots (vertices current-index) env
+    (unless (gethash v vertices)
+      (setf (gethash v vertices)
+            current-index)
+      (incf current-index))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; VRML (.wrl)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defclass vrml-environment (3d-environment)
   ((shapes :initform (make-hash-table) ; shape names are symbols, so eql is ok
@@ -205,10 +267,6 @@
               :initarg :transform
               :accessor transform
               :type vrml-transformation)))
-
-(defmethod initialize-instance :after ((env vrml-environment) &key)
-  (with-slots (shapes transform) env
-    (setf (gethash nil shapes) transform)))
 
 (defclass vrml-shape ()
   ((material :initform nil
@@ -243,11 +301,13 @@
              :initarg :children
              :accessor children
              :type list)))
+
 (defclass vrml-translation (vrml-transformation)
   ((vect :initform (v 0 0 0)
          :initarg :vect
          :accessor vect
          :type vect)))
+
 (defclass vrml-rotation (vrml-transformation)
   ((vect :initform (v 0 0 0)
          :initarg :vect
@@ -258,6 +318,13 @@
          :accessor spin
          :type real)))
 
+(defgeneric export-vrml (vrml)
+  (:documentation "VRML2string"))
+
+
+(defmethod initialize-instance :after ((env vrml-environment) &key)
+  (with-slots (shapes transform) env
+    (setf (gethash nil shapes) transform)))
 
 (defmethod stack progn ((env vrml-environment))
   (with-slots (transform stack) env
@@ -273,10 +340,6 @@
     (format wrl "~a" (export-vrml env)))
   (values))
 
-
-(defgeneric export-vrml (vrml)
-  (:documentation "VRML2string"))
-
 (defmethod export-vrml ((env vrml-environment))
   (flet ((maphash->list (fun ht)
            (let ((l ()))
@@ -289,8 +352,6 @@
                              (declare (ignore k))
                              (export-vrml v))
                            (shapes env)))))
-;; (format nil "#VRML V2.0 utf8~%~%~{~a~^~&~%~}"
-;;         (mapcar #'export-vrml (shapes env))))
 
 (defmethod export-vrml ((shape vrml-shape))
   (format nil "~&Shape {~%~a~&~a~&}"
@@ -319,52 +380,3 @@
     (format nil "~&Transform {~%rotation ~f ~f ~f ~f~%children [~{~&~a~}~&]~%}"
             (vx vect) (vy vect) (vz vect) spin
             (mapcar #'export-vrml children))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; Wavefront OBJ
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun sxhash-vect (v)
-  (sxhash (map 'list #'identity v)))
-(sb-ext:define-hash-table-test v= sxhash-vect)
-
-(defclass obj-environment (3d-environment)
-  ((vertices :initform (make-hash-table :test 'v=)
-             :accessor vertices)
-   (lines :initform ()
-          :accessor lines)
-   (faces :initform ()
-          :accessor faces)
-   (current-index :initform 1)))
-
-(defun add-vertice (env v)
-  (declare (type V3 v)
-           (type obj-environment env))
-  (with-slots (vertices current-index) env
-    (unless (gethash v vertices)
-      (setf (gethash v vertices)
-            current-index)
-      (incf current-index))))
-
-(defmethod initialize-instance :after ((env obj-environment) &key)
-  (add-vertice env (v 0 0 0)))
-
-(defmethod save ((env obj-environment) filename)
-  (with-open-file (obj (format nil "~a.obj" filename)
-                       :direction :output
-                       :if-exists :supersede)
-    (with-slots (vertices lines faces) env
-      (labels ((dump-v (v)
-                 (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
-               (index-of (v)
-                 (gethash v vertices))
-               (dump-l (l)
-                 (destructuring-bind (src . dst) l
-                   (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
-               (dump-f (f)
-                 (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
-        (maphash-keys #'dump-v vertices)
-        ;; (dump-v (v 0 0 0))
-        (mapc #'dump-f faces)
-        (mapc #'dump-l lines))))
-  (values))
