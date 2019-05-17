@@ -150,31 +150,66 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; OBJ environment
 
+(defun make-circular (list)
+  (let ((clist (copy-seq list)))
+    (setf (cdr (last clist))
+          clist)))
+
+(defun circle-in-plan (u v &optional (n 16))
+  "Returns a *circular* list containing the coordinates of the points a circle
+at origin in the plan (`u', `v'). `u' and `v' must be unit orthogonal vectors.
+`n' is the number of points to generate."
+  (declare (type vect u v)
+           (type (integer (0) *) n))
+  (flet ((point-at (theta)
+           (declare (type float theta))
+           (v+ (v* u (scalar->v (cos theta)
+                                (v-dim u)))
+               (v* v (scalar->v (sin theta)
+                                (v-dim v))))))
+    (loop :with dtheta := (/ (* 2 pi) n)
+          :for i :from 0 :below n
+          :for theta := (* dtheta i)
+          :collect (point-at theta))))
+
+(defun make-cylinder (circle-1 circle-2 &optional (n 16))
+  (loop :repeat n
+        :for f1 := (make-circular circle-1) :then (cdr f1)
+        :for f2 := (make-circular circle-2) :then (cdr f2)
+        :for a := (first f1)
+        :for b := (second f1)
+        :for alpha := (first f2)
+        :for beta := (second f2)
+        ;; the order of the vertices in the face is important for OBJ's normal interpolation
+        :collecting (list a b alpha)
+        :collecting (list alpha b beta)))
+
 (defmethod eval ((forward forward) (env obj-environment))
   (let* ((turtle (turtle env))
          (oldp (position turtle)))
     (call-next-method) ; updates the turtle's position
-    (let ((newp (position (turtle env))))
-      (add-vertice env newp)
-      (add-vertice env oldp) ; ensure last position has its vertice (last inst may have been a jump)
-      (with-3d-turtle-space (nil v w) turtle
-        (let* ((face (list (v+ v w)
-                           (v+ (v- v) w)
-                           (v- w)))
-               (base-face (mapcar (lambda (vertice)
-                                    (v+ vertice oldp))
-                                  face))
-               (other-face (mapcar (lambda (vertice)
-                                    (v+ vertice newp))
-                                  face)))
+    (with-3d-turtle-space (nil v w) turtle
+      (flet ((scale-translate-circle (delta lambda circle)
+               (mapcar (lambda (v)
+                         (v+ lambda (v* v (scalar->v delta (v-dim v)))))
+                       circle)))
+        (let* ((newp (position (turtle env)))
+               (n 16)
+               (circle (circle-in-plan v w n))
+               (c1 (scale-translate-circle 0.5 oldp circle))
+               (c2 (scale-translate-circle 0.5 newp circle)))
+
+          ;; add vertices of the circles
+          (flet ((add (vs)
+                   (dolist (v vs)
+                     (add-vertice env v))))
+            (add c1)
+            (add c2))
+
+          ;; add the faces
           (with-slots (faces) env
-            (destructuring-bind ((a b c) . (alpha beta gamma))
-                (cons base-face other-face)
-              (push (list a b beta alpha) faces)
-              (push (list c a alpha gamma) faces)
-              (push (list b c gamma beta) faces)
-              (mapc (lambda (vertice)
-                      (add-vertice env vertice))
-                    (list a b c alpha beta gamma)))
-            (push base-face faces)
-            (push other-face faces)))))))
+            ;; the circles (convex shapes) are within the same plan => one single face
+            (push c1 faces)
+            (push c2 faces)
+            ;; the body of the cylinder
+            (appendf faces (make-cylinder c1 c2 n))))))))

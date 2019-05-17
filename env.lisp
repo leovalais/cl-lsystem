@@ -212,7 +212,7 @@
 (sb-ext:define-hash-table-test v= sxhash-vect)
 
 (defclass obj-environment (3d-environment)
-  ((vertices :initform (make-hash-table :test 'v=)
+  ((vertices :initform ()
              :accessor vertices)
    (lines :initform ()
           :accessor lines)
@@ -232,13 +232,13 @@
       (labels ((dump-v (v)
                  (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
                (index-of (v)
-                 (gethash v vertices))
+                 (1+ (cl:position v vertices :test #'v~)))
                (dump-l (l)
                  (destructuring-bind (src . dst) l
                    (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
                (dump-f (f)
                  (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
-        (maphash-keys #'dump-v vertices)
+        (mapc #'dump-v vertices)
         (mapc #'dump-f faces)
         (mapc #'dump-l lines))))
   (values))
@@ -247,8 +247,6 @@
 (defun add-vertice (env v)
   (declare (type V3 v)
            (type obj-environment env))
-  (with-slots (vertices current-index) env
-    (unless (gethash v vertices)
-      (setf (gethash v vertices)
-            current-index)
-      (incf current-index))))
+  (with-slots (vertices) env
+    (unless (member v vertices :test #'v~)
+      (push v vertices))))

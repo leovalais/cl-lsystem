@@ -97,11 +97,11 @@
              (A (noop))
              (B (noop)))))
 
-(defparameter *tree-test-delta* (/ pi 2))
+(defparameter *tree-test-delta* (/ pi 3))
 (defparameter *tree-test*
   `(:axiom (A)
     :rules ((A (F [ & B ] [ ^ B ] [ + B ] [ - B ]))
             (B (F A)))
-    :turtle (,@(standard-3d-turtle *tree-test-delta* 8)
+    :turtle (,@(standard-3d-turtle *tree-test-delta* 3)
              (A (noop))
              (B (noop)))))
