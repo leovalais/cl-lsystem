@@ -150,13 +150,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; OBJ environment
 
-(defun make-circular (list)
-  (let ((clist (copy-seq list)))
-    (setf (cdr (last clist))
-          clist)))
-
 (defun circle-in-plan (u v &optional (n 16))
-  "Returns a *circular* list containing the coordinates of the points a circle
+  "Returns a list containing the coordinates of the points a circle
 at origin in the plan (`u', `v'). `u' and `v' must be unit orthogonal vectors.
 `n' is the number of points to generate."
   (declare (type vect u v)
@@ -173,16 +168,21 @@ at origin in the plan (`u', `v'). `u' and `v' must be unit orthogonal vectors.
           :collect (point-at theta))))
 
 (defun make-cylinder (circle-1 circle-2 &optional (n 16))
-  (loop :repeat n
-        :for f1 := (make-circular circle-1) :then (cdr f1)
-        :for f2 := (make-circular circle-2) :then (cdr f2)
-        :for a := (first f1)
-        :for b := (second f1)
-        :for alpha := (first f2)
-        :for beta := (second f2)
-        ;; the order of the vertices in the face is important for OBJ's normal interpolation
-        :collecting (list a b alpha)
-        :collecting (list alpha b beta)))
+  (flet ((make-circular (list)
+           (let ((clist (copy-seq list)))
+             (setf (cdr (last clist))
+                   clist)
+             clist)))
+    (loop :repeat n
+          :for f1 := (make-circular circle-1) :then (cdr f1)
+          :for f2 := (make-circular circle-2) :then (cdr f2)
+          :for a := (first f1)
+          :for b := (second f1)
+          :for alpha := (first f2)
+          :for beta := (second f2)
+          ;; the order of the vertices in the face is important for OBJ's normal interpolation
+          :collecting (list a b alpha)
+          :collecting (list alpha b beta))))
 
 (defmethod eval ((forward forward) (env obj-environment))
   (let* ((turtle (turtle env))
