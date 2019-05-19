@@ -189,16 +189,20 @@ at origin in the plan (`u', `v'). `u' and `v' must be unit orthogonal vectors.
          (oldp (position turtle)))
     (call-next-method) ; updates the turtle's position
     (with-3d-turtle-space (nil v w) turtle
-      (flet ((scale-translate-circle (delta lambda circle)
+      (flet ((scale-translate-vertices (delta lambda vertices)
+               "Scales each vertice of `vertices' by a factor `delta' and then
+translates them by `lambda' which is a 3D vector. Returns the list of the new vertices."
+               (declare (type V3 lambda)
+                        (type real delta))
                (mapcar (lambda (v)
                          (v+ lambda (v* v (scalar->v delta (v-dim v)))))
-                       circle)))
+                       vertices)))
         (with-slots (turtle branch-radius branch-decay edges-per-branch faces) env
           (let* ((newp (position turtle))
                  (circle (circle-in-plan v w edges-per-branch))
-                 (c1 (scale-translate-circle branch-radius oldp circle))
+                 (c1 (scale-translate-vertices branch-radius oldp circle))
                  (new-radius (* branch-radius branch-decay))
-                 (c2 (scale-translate-circle new-radius newp circle)))
+                 (c2 (scale-translate-vertices new-radius newp circle)))
 
             ;; update environment's branch radius
             (setf branch-radius new-radius)
