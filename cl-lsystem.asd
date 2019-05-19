@@ -15,6 +15,7 @@
                 :closer-mop
                 :vecto
                 :trivia
+                :trees
                 :cl-arrows)
 
   :serial t

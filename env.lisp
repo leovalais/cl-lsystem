@@ -216,7 +216,7 @@
 ;;;; Wavefront OBJ
 
 (defclass obj-environment (3d-environment)
-  ((vertices :initform ()
+  ((vertices :initform (trees:make-binary-tree :avl #'v<= :key #'identity :test #'v~)
              :accessor vertices)
    (lines :initform ()
           :accessor lines)
@@ -253,13 +253,15 @@
       (labels ((dump-v (v)
                  (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
                (index-of (v)
-                 (1+ (cl:position v vertices :test #'v~)))
+                 (1+ (trees:position v vertices)))
                (dump-l (l)
                  (destructuring-bind (src . dst) l
                    (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
                (dump-f (f)
                  (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
-        (mapc #'dump-v vertices)
+        (trees:pprint-tree vertices)
+        (trees:dotree (v vertices)
+          (dump-v v))
         (mapc #'dump-f faces)
         (mapc #'dump-l lines))))
   (values))
@@ -268,6 +270,5 @@
 (defun add-vertice (env v)
   (declare (type V3 v)
            (type obj-environment env))
-  (with-slots (vertices) env
-    (unless (member v vertices :test #'v~)
-      (push v vertices))))
+  (->> (trees:insert v (vertices env))
+     (nth-value 1)))
