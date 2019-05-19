@@ -7,7 +7,7 @@
   ((position :initform nil
              :initarg :position
              :accessor position
-             :type vect)))
+             :type (or null vect))))
 
 ;; NOTE `direction' should always be a unit vector
 (defclass turtle2d (turtle)
@@ -117,7 +117,15 @@
 (defclass 3d-environment (environment)
   ((turtle :initform (make-instance 'turtle3D)
            :type turtle3D
-           :accessor turtle)))
+           :accessor turtle)
+   (branch-radius :initform 1.0
+                  :initarg :branch-radius
+                  :accessor branch-radius
+                  :type float)
+   (branch-decay :initform 1.0 ; no decay
+                 :initarg :branch-decay
+                 :accessor branch-decay
+                 :type (float (0.0) 1.0))))
 
 
 (defgeneric save (env filename))
@@ -207,22 +215,35 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Wavefront OBJ
 
-(defun sxhash-vect (v)
-  (sxhash (map 'list #'identity v)))
-(sb-ext:define-hash-table-test v= sxhash-vect)
-
 (defclass obj-environment (3d-environment)
-  ((vertices :initform (make-hash-table :test 'v=)
+  ((vertices :initform ()
              :accessor vertices)
    (lines :initform ()
           :accessor lines)
    (faces :initform ()
           :accessor faces)
-   (current-index :initform 1)))
+   (edges-per-branch :initform 16
+                     :initarg :edges-per-branch
+                     :reader edges-per-branch
+                     :type (integer (0) *))))
 
 
 (defmethod initialize-instance :after ((env obj-environment) &key)
   (add-vertice env (v 0 0 0)))
+
+(defmethod stack progn ((env obj-environment))
+  (with-slots (stack) env
+    (push (branch-radius env)
+          stack)
+    (push (branch-decay env)
+          stack)))
+
+(defmethod unstack progn ((env obj-environment))
+  (with-slots (stack) env
+    (setf (branch-decay env)
+          (pop stack))
+    (setf (branch-radius env)
+          (pop stack))))
 
 (defmethod save ((env obj-environment) filename)
   (with-open-file (obj (format nil "~a.obj" filename)
@@ -232,13 +253,13 @@
       (labels ((dump-v (v)
                  (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
                (index-of (v)
-                 (gethash v vertices))
+                 (1+ (cl:position v vertices :test #'v~)))
                (dump-l (l)
                  (destructuring-bind (src . dst) l
                    (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
                (dump-f (f)
                  (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
-        (maphash-keys #'dump-v vertices)
+        (mapc #'dump-v vertices)
         (mapc #'dump-f faces)
         (mapc #'dump-l lines))))
   (values))
@@ -247,8 +268,6 @@
 (defun add-vertice (env v)
   (declare (type V3 v)
            (type obj-environment env))
-  (with-slots (vertices current-index) env
-    (unless (gethash v vertices)
-      (setf (gethash v vertices)
-            current-index)
-      (incf current-index))))
+  (with-slots (vertices) env
+    (unless (member v vertices :test #'v~)
+      (push v vertices))))

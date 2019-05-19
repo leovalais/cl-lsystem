@@ -80,7 +80,6 @@
 (defparameter *tree-b-delta* (deg->rad 30))
 (defparameter *tree-b*
   `(:axiom (F A)
-    ;;  A = f[^Bl]>>[^Bl]>>A, B = f[-Bl]B
     :rules ((A (F [ ^ B L ] > > [ ^ B L ] > > A))
             (B (F [ - B L ] B)))
     :turtle (,@(standard-3d-turtle *tree-b-delta*)
@@ -97,11 +96,11 @@
              (A (noop))
              (B (noop)))))
 
-(defparameter *tree-test-delta* (/ pi 2))
+(defparameter *tree-test-delta* (/ pi 3))
 (defparameter *tree-test*
   `(:axiom (A)
     :rules ((A (F [ & B ] [ ^ B ] [ + B ] [ - B ]))
             (B (F A)))
-    :turtle (,@(standard-3d-turtle *tree-test-delta* 8)
+    :turtle (,@(standard-3d-turtle *tree-test-delta* 3)
              (A (noop))
              (B (noop)))))
