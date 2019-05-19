@@ -226,6 +226,10 @@
           :accessor lines)
    (faces :initform ()
           :accessor faces)
+   (edges-per-branch :initform 16
+                     :initarg :edges-per-branch
+                     :reader edges-per-branch
+                     :type (integer (0) *))
    (current-index :initform 1)))
 
 

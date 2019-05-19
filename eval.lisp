@@ -193,28 +193,26 @@ at origin in the plan (`u', `v'). `u' and `v' must be unit orthogonal vectors.
                (mapcar (lambda (v)
                          (v+ lambda (v* v (scalar->v delta (v-dim v)))))
                        circle)))
-        (let* ((newp (position (turtle env)))
-               (n 16)
-               (circle (circle-in-plan v w n))
-               (c1 (scale-translate-circle (branch-radius env) oldp circle))
-               (c2 (scale-translate-circle (let ((new-radius (* (branch-radius env)
-                                                                (branch-decay env))))
-                                             (setf (branch-radius env)
-                                                   new-radius)
-                                             new-radius)
-                                           newp circle)))
+        (with-slots (turtle branch-radius branch-decay edges-per-branch faces) env
+          (let* ((newp (position turtle))
+                 (circle (circle-in-plan v w edges-per-branch))
+                 (c1 (scale-translate-circle branch-radius oldp circle))
+                 (new-radius (* branch-radius branch-decay))
+                 (c2 (scale-translate-circle new-radius newp circle)))
 
-          ;; add vertices of the circles
-          (flet ((add (vs)
-                   (dolist (v vs)
-                     (add-vertice env v))))
-            (add c1)
-            (add c2))
+            ;; update environment's branch radius
+            (setf branch-radius new-radius)
 
-          ;; add the faces
-          (with-slots (faces) env
+            ;; add vertices of the circles
+            (flet ((add (vs)
+                     (dolist (v vs)
+                       (add-vertice env v))))
+              (add c1)
+              (add c2))
+
+            ;; add the faces
             ;; the circles (convex shapes) are within the same plan => one single face
             (push c1 faces)
             (push c2 faces)
             ;; the body of the cylinder
-            (appendf faces (make-cylinder c1 c2 n))))))))
+            (appendf faces (make-cylinder c1 c2 edges-per-branch))))))))
