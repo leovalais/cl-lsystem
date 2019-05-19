@@ -215,10 +215,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Wavefront OBJ
 
-(defun sxhash-vect (v)
-  (sxhash (map 'list #'identity v)))
-(sb-ext:define-hash-table-test v= sxhash-vect)
-
 (defclass obj-environment (3d-environment)
   ((vertices :initform ()
              :accessor vertices)
@@ -229,8 +225,7 @@
    (edges-per-branch :initform 16
                      :initarg :edges-per-branch
                      :reader edges-per-branch
-                     :type (integer (0) *))
-   (current-index :initform 1)))
+                     :type (integer (0) *))))
 
 
 (defmethod initialize-instance :after ((env obj-environment) &key)
