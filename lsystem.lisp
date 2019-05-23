@@ -17,11 +17,11 @@
    (function :initform nil
              :initarg :function
              :accessor function
-             :type (or null function))
+             :type (or null cl:function))
    (instruction :initform (error "a rule must have an instruction")
                 :initarg :instruction
                 :accessor instruction
-                :type function)))
+                :type cl:function)))
 
 (defclass lsystem ()
   ((axiom :initform ()
