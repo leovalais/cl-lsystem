@@ -111,11 +111,13 @@
 
 (defclass 2d-environment (environment)
   ((turtle :initform (make-instance 'turtle2D)
+           :initarg :turtle
            :type turtle2D
            :accessor turtle)))
 
 (defclass 3d-environment (environment)
   ((turtle :initform (make-instance 'turtle3D)
+           :initarg :turtle
            :type turtle3D
            :accessor turtle)
    (branch-radius :initform 1.0
