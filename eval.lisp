@@ -50,11 +50,11 @@
                   v-unit)))
     (the V2 newd)))
 
-(defmethod eval ((turn turn) (env 2d-environment))
-  (with-slots (angle) turn
-    (declare (type real angle)) ; => in a 2D space, `angle' is only a scalar
+(defmethod eval ((rotate rotate) (env 2d-environment))
+  (with-slots (theta) rotate
+    (declare (type real theta)) ; => in a 2D space, `angle' is only a scalar
     (let* ((turtle (turtle env))
-           (newd (rotate-2d-direction angle
+           (newd (rotate-2d-direction theta
                                       (direction turtle))))
       (update-turtle env :direction newd))))
 
@@ -104,34 +104,26 @@
     (the (matrix 3 3)
          newspace)))
 
-(defun rotation-vector->rotation-angle-and-kind (v &optional (epsilon 0.0000001))
-  (declare (type V3 v)
-           (type (float (0.0) *) epsilon))
-  (flet ((~zerop (number) ; read "approximately zerop" :D
-           (<= (- epsilon) number epsilon)))
-    (let ((non-zero-indexes (remove-if #'~zerop '(0 1 2)
-                                       :key (lambda (i)
-                                              (v[] i v)))))
-      (cond
-        ((null non-zero-indexes)
-         (error "if you want to rotate, why is your vector ~a null, you dumba**?" v))
-        ((null (rest non-zero-indexes))
-         (let ((i (first non-zero-indexes)))
-           (values (v[] i v)
-                   (nth i '(:roll :pitch :yaw)))))
-        (t
-         (error "cannot infer rotation axis when the rotation vector ~a has more that one non-zero component" v))))))
+(defun 3d-turn (env theta kind)
+  (declare (type 3d-environment env)
+           (type real theta)
+           (type (member :roll :pitch :yaw) kind))
+  (with-updated-turtle (turtle env)
+    (with-slots (space) turtle
+      (setf space
+            (rotate-3d-space theta kind space)))))
 
-(defmethod eval ((turn turn) (env 3d-environment))
-  (with-slots (angle) turn
-    (declare (type V3 angle)) ; => in a 3D space, `angle' must be a 3D vector [roll pitch yaw]
-    (with-updated-turtle (turtle env)
-      (multiple-value-bind (theta kind)
-          (rotation-vector->rotation-angle-and-kind angle)
-        (with-slots (space) turtle
-          (setf space
-                (rotate-3d-space theta kind space)))))))
+(defmethod eval ((roll roll) (env 3d-environment))
+  (with-slots (theta) roll
+    (3d-turn env theta :roll)))
 
+(defmethod eval ((pitch pitch) (env 3d-environment))
+  (with-slots (theta) pitch
+    (3d-turn env theta :pitch)))
+
+(defmethod eval ((yaw yaw) (env 3d-environment))
+  (with-slots (theta) yaw
+    (3d-turn env theta :yaw)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; PNG environment

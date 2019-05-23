@@ -3,35 +3,35 @@
 (defun deg->rad (x)
   (* x (/ pi 180)))
 
-;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ;;;; 2D L-Systems
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; 2D L-Systems
 
 (define-lsystem *koch* #wF)
 (define-rule F () #i(forward 5) #wF+F-F-F+F)
-(define-rule + () #i(turn (/ pi 2)))
-(define-rule - () #i(turn (/ pi -2)))
+(define-rule + () #i(rotate (/ pi 2)))
+(define-rule - () #i(rotate (/ pi -2)))
 
 (define-lsystem *siertri* #wFr)
 (define-rule F1 () #i(forward 5) #wFr+F1+Fr)
 (define-rule Fr () #i(forward 5) #w(F1-Fr-F1))
-(define-rule + () #i(turn (/ pi 3)))
-(define-rule - () #i(turn (/ pi -3)))
+(define-rule + () #i(rotate (/ pi 3)))
+(define-rule - () #i(rotate (/ pi -3)))
 
-;; ;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
+;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
 
 (define-lsystem *plant-p* #wX)
 (define-rule X () #i(forward 5) #wF[+X]F[-X]+X)
 (define-rule F () #i(forward 5) #wFF)
-(define-rule + () #i(turn (/ pi 9)))
-(define-rule - () #i(turn (/ pi -9)))
+(define-rule + () #i(rotate (/ pi 9)))
+(define-rule - () #i(rotate (/ pi -9)))
 (define-rule [ () #i(stack))
 (define-rule ] () #i(unstack))
 
 (define-lsystem *plant-p* #wX)
 (define-rule X () #i(forward 5) #wF-[[X]+X]+F[+FX]-X)
 (define-rule F () #i(forward 5) #wFF)
-(define-rule + () #i(turn (deg->rad 22.5)))
-(define-rule - () #i(turn (deg->rad 22.5)))
+(define-rule + () #i(rotate (deg->rad 22.5)))
+(define-rule - () #i(rotate (deg->rad 22.5)))
 (define-rule [ () #i(stack))
 (define-rule ] () #i(unstack))
 
@@ -46,12 +46,12 @@
   (define-rule G () #i(jump delta))
   (define-rule [ () #i(stack))
   (define-rule ] () #i(unstack))
-  (define-rule < () #i(turn (v theta 0 0)))
-  (define-rule > () #i(turn (v (- theta) 0 0)))
-  (define-rule ^ () #i(turn (v 0 theta 0)))
-  (define-rule & () #i(turn (v 0 (- theta) 0)))
-  (define-rule + () #i(turn (v 0 0 theta)))
-  (define-rule - () #i(turn (v 0 0 (- theta)))))
+  (define-rule < () #i(roll theta))
+  (define-rule > () #i(roll (- theta)))
+  (define-rule ^ () #i(pitch theta))
+  (define-rule & () #i(pitch (- theta)))
+  (define-rule + () #i(yaw theta))
+  (define-rule - () #i(yaw (- theta))))
 
 (define-lsystem *tree-a* #wFA)
 (define-3d-turtle (deg->rad 30) 5)
