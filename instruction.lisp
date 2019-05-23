@@ -73,6 +73,12 @@
   ()
   (:metaclass singleton-instruction))
 
+(defclass lisp ()
+  ((procedure :type cl:function))
+  (:metaclass instruction)
+  (:documentation "Applies the given function. Its argument is the environment.")
+  (:constructor (procedure)))
+
 (defun eval-instruction-constructor (sexp)
   (destructuring-bind (class-name &rest args) sexp
     (let* ((class (find-class class-name))

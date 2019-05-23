@@ -17,6 +17,9 @@
   (declare (ignore unstack))
   (unstack env))
 
+(defmethod eval ((lisp lisp) (env environment))
+  (with-slots (procedure) lisp
+    (funcall procedure env)))
 
 (defun move-by-delta (position direction delta)
   (v+ position
