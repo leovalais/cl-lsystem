@@ -1,61 +1,45 @@
 (in-package :cl-lsystem)
 
+(defun deg->rad (x)
+  (* x (/ pi 180)))
+
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ;;;; 2D L-Systems
 
-;; (defparameter *koch*
-;;   '(:axiom (F)
-;;     :rules ((F (F + F - F - F + F)))
-;;     :turtle ((F (forward 5))
-;;              (+ (turn (/ pi 2)))
-;;              (- (turn (- (/ pi 2)))))))
+(define-lsystem *koch* #wF)
+(define-rule F () #i(forward 5) #wF+F-F-F+F)
+(define-rule + () #i(turn (/ pi 2)))
+(define-rule - () #i(turn (/ pi -2)))
 
-;; (defparameter *siertri*
-;;   '(:axiom (Fr)
-;;     :rules ((F1 (Fr + F1 + Fr))
-;;             (Fr (F1 - Fr - F1)))
-;;     :turtle ((Fr (forward 5))
-;;              (F1 (forward 5))
-;;              (+ (turn (/ pi 3)))
-;;              (- (turn (- (/ pi 3)))))))
+(define-lsystem *siertri* #wFr)
+(define-rule F1 () #i(forward 5) #wFr+F1+Fr)
+(define-rule Fr () #i(forward 5) #w(F1-Fr-F1))
+(define-rule + () #i(turn (/ pi 3)))
+(define-rule - () #i(turn (/ pi -3)))
 
 ;; ;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
 
-;; (defparameter *plant-p-delta* (/ pi 9))
-;; (defparameter *plant-p*
-;;   '(:axiom (X)
-;;     :rules ((X (F [ + X ] F [ - X ] + X))
-;;             (F (F F)))
-;;     :initial-orientation (/ pi 2)
-;;     :turtle ((X (forward 5))
-;;              (F (forward 5))
-;;              (+ (turn *plant-p-delta*))
-;;              (- (turn (- *plant-p-delta*)))
-;;              ([ (stack))
-;;              (] (unstack)))))
+(define-lsystem *plant-p* #wX)
+(define-rule X () #i(forward 5) #wF[+X]F[-X]+X)
+(define-rule F () #i(forward 5) #wFF)
+(define-rule + () #i(turn (/ pi 9)))
+(define-rule - () #i(turn (/ pi -9)))
+(define-rule [ () #i(stack))
+(define-rule ] () #i(unstack))
 
-
-;; (defparameter *plant-f-delta* (deg->rad 22.5))
-;; (defparameter *plant-f*
-;;   '(:axiom (X)
-;;     :rules ((X (F - [ [ X ] + X ] + F [ + F X ] - X))
-;;             (F (F F)))
-;;     :initial-orientation (/ pi 2)
-;;     :turtle ((X (forward 5))
-;;              (F (forward 5))
-;;              (+ (turn *plant-f-delta*))
-;;              (- (turn (- *plant-f-delta*)))
-;;              ([ (stack))
-;;              (] (unstack)))))
+(define-lsystem *plant-p* #wX)
+(define-rule X () #i(forward 5) #wF-[[X]+X]+F[+FX]-X)
+(define-rule F () #i(forward 5) #wFF)
+(define-rule + () #i(turn (deg->rad 22.5)))
+(define-rule - () #i(turn (deg->rad 22.5)))
+(define-rule [ () #i(stack))
+(define-rule ] () #i(unstack))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; 3D L-Systems
 
 ;; trees in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
-
-(defun deg->rad (x)
-  (* x (/ pi 180)))
 
 (defun define-3d-turtle (theta &optional (delta 3))
   (define-rule F () #i(forward delta))
