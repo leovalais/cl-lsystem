@@ -14,16 +14,14 @@
                 :gutils
                 :closer-mop
                 :vecto
-                :trivia
                 :cl-arrows)
 
   :serial t
   :components ((:file "package")
-               (:file "definitions")
-               (:file "parse")
-               (:file "grammar")
+               (:file "utils")
+               (:file "lsystem")
                (:file "instruction")
                (:file "env")
                (:file "eval")
-               (:file "lsystem")
+               (:file "endpoints")
                (:file "examples")))

@@ -56,9 +56,9 @@
   (:method ((turtle3d turtle3d))
     (m-col[] 0 (space turtle3d))))
 
-;; FIXME unary generic method already declared in `definitions.lisp' for `rule'
-(defmethod left ((turtle3d turtle3d))
-  (m-col[] 1 (space turtle3d)))
+(defgeneric left (turtle3d)
+  (:method ((turtle3d turtle3d))
+    (m-col[] 1 (space turtle3d))))
 
 (defgeneric up (turtle3d)
   (:method ((turtle3d turtle3d))
