@@ -73,6 +73,16 @@
   ()
   (:metaclass singleton-instruction))
 
+(defclass begin-fill ()
+  ()
+  (:metaclass singleton-instruction)
+  (:documentation ""))
+
+(defclass end-fill ()
+  ()
+  (:metaclass singleton-instruction)
+  (:documentation ""))
+
 (defclass lisp ()
   ((procedure :type cl:function))
   (:metaclass instruction)

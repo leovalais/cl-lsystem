@@ -67,10 +67,17 @@
 (defmethod eval ((jump jump) (env 3d-environment))
   (with-updated-turtle (turtle env)
     (with-slots (position) turtle
+      ;; move the turtle
       (setf position
             (move-by-delta position (head turtle)
                            (with-slots (delta) jump
-                             delta))))))
+                             delta)))
+      ;; if a filling polygon is being built, update it
+      (with-slots (fill-stack) env
+        (when (car fill-stack)
+          (setf fill-stack
+                (cons (cons position (car fill-stack))
+                      (rest fill-stack))))))))
 
 ;;; NOTE roll => R(x), pitch = R(y), yaw = R(z)
 (defun roll-3d-rotation-matrix (theta)
@@ -127,6 +134,16 @@
 (defmethod eval ((yaw yaw) (env 3d-environment))
   (with-slots (theta) yaw
     (3d-turn env theta :yaw)))
+
+(defmethod eval ((begin-fill begin-fill) (env 3d-environment))
+  (with-slots (fill-stack turtle) env
+    ;; push initial position of the turtle when filling begins
+    (push (list (position turtle))
+          fill-stack)))
+
+(defmethod eval ((end-fill end-fill) (env 3d-environment))
+  (with-slots (fill-stack) env
+    (pop fill-stack)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; PNG environment
@@ -215,3 +232,22 @@ translates them by `lambda' which is a 3D vector. Returns the list of the new ve
             (push c2 faces)
             ;; the body of the cylinder
             (appendf faces (make-cylinder c1 c2 edges-per-branch))))))))
+
+(defmethod eval ((end-fill end-fill) (env obj-environment))
+  (with-slots (fill-stack faces) env
+    (let ((polygon (-<> (first fill-stack) ; the polygon is the top of the stack
+                        ;; reversed because of the head insertion of voxels
+                        (reverse <>)
+                        ;; depending on the path of the turtle, its last position may also
+                        ;; be its first, so we need to remove that eventual duplicate
+                        ;; because of OBJ format
+                        (remove-duplicates <> :test #'v~))))
+      (assert polygon nil "weird, and WTF? the L-System might be wrong")
+      ;; ensure every vertice is added (non-printing jumps might have occured)
+      (mapc (lambda (v)
+              (add-vertice env v))
+            polygon)
+      ;; finally add the face (NOTE the writter of the L-System is responsible
+      ;; of normal interpolation correctness)
+      (push polygon faces)))
+  (call-next-method))

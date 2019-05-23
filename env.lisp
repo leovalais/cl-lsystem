@@ -127,7 +127,11 @@
    (branch-decay :initform 1.0 ; no decay
                  :initarg :branch-decay
                  :accessor branch-decay
-                 :type (float (0.0) 1.0))))
+                 :type (float (0.0) 1.0))
+   (fill-stack :initform ()
+               :accessor fill-stack
+               ;; list of polygons (i.e.: list of voxels)
+               :type (rte:rte (:* (rte:rte (:* V3)))))))
 
 
 (defgeneric save (env filename))
