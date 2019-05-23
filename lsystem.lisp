@@ -105,15 +105,21 @@
                              (make-instance 'lsystem :axiom ,axiom))))
 
 (defmacro define-rule (name lambda-list instruction &body body)
-  `(set-rule *lsystem*
-             (make-instance 'rule
-                            :name ',name
-                            :function ,(if body
-                                           `(lambda ,lambda-list
-                                              ,@body)
-                                           nil)
-                            :instruction (lambda ,lambda-list
-                                           ,instruction))))
+  (let* ((ll (set-difference lambda-list lambda-list-keywords))
+         (ignore-statement (etypecase ll
+                             ((rte:rte (:+ symbol)) `((declare (ignorable ,@ll))))
+                             (list                  '()))))
+    `(set-rule *lsystem*
+               (make-instance 'rule
+                              :name ',name
+                              :function ,(if body
+                                             `(lambda ,lambda-list
+                                                ,@ignore-statement
+                                                ,@body)
+                                             nil)
+                              :instruction (lambda ,lambda-list
+                                             ,@ignore-statement
+                                             ,instruction)))))
 
 (defmacro parametric-word (&rest words)
   (flet ((word->list (word)
