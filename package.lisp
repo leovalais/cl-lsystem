@@ -5,5 +5,6 @@
    position ; cl (turtle slot)
    space ; cl (turtle3D)
    function ; cl (rule)
+   rotate ; alexandria (instruction)
    save) ; gutils
   (:export process))

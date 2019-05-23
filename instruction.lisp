@@ -31,20 +31,34 @@
   ()
   (:metaclass singleton-instruction))
 
-(defclass jump ()
-  (delta)
-  (:metaclass instruction)
-  (:constructor (delta)))
-
 (defclass forward (jump)
-  (delta)
+  ((delta :type real))
   (:metaclass instruction)
   (:constructor (delta)))
 
-(defclass turn ()
-  (angle)
+(defclass rotate ()
+  ((theta :type real))
   (:metaclass instruction)
-  (:constructor (angle)))
+  (:documentation "2D rotation")
+  (:constructor (theta)))
+
+(defclass roll ()
+  ((theta :type real))
+  (:metaclass instruction)
+  (:documentation "3D X rotation")
+  (:constructor (theta)))
+
+(defclass pitch ()
+  ((theta :type real))
+  (:metaclass instruction)
+  (:documentation "3D Y rotation")
+  (:constructor (theta)))
+
+(defclass yaw ()
+  ((theta :type real))
+  (:metaclass instruction)
+  (:documentation "3D Z rotation")
+  (:constructor (theta)))
 
 (defclass stack ()
   ()
