@@ -31,6 +31,11 @@
   ()
   (:metaclass singleton-instruction))
 
+(defclass jump ()
+  (delta)
+  (:metaclass instruction)
+  (:constructor (delta)))
+
 (defclass forward (jump)
   ((delta :type real))
   (:metaclass instruction)
