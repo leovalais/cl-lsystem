@@ -1,28 +1,161 @@
 (in-package :cl-lsystem)
 
-(defun apply-initial-direction (lsystem env)
-  (declare (ignore lsystem env))
-  ;; (if-let (d (initial-direction lsystem))
-  ;;   (setf (direction (turtle env))
-  ;;         d))
-  )
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Definitions
 
-(defun process (sexp n &optional
-                         (env (make-instance 'png-environment))
-                         (filename "out"))
-  (let* ((lsystem (parse sexp))
-         (word (expand (grammar lsystem) n)))
-    (apply-initial-direction lsystem env)
-    (iter (for letter in-vector word)
-      (let ((instruction (gethash letter (mapping lsystem))))
-        (assert instruction nil "no instruction for ~a" letter)
-        (eval instruction env)))
-    (save env filename)
-    :ok))
+(deftype parametrized-letter ()
+  '(rte:rte (:cat symbol (:* t))))
 
-;; (defun tree-test (&optional (n 6) (filename "tree-test"))
-;;   (when-let (f (probe-file (format nil "~a.obj" filename)))
-;;     (format t "~&~a deleted" f)
-;;     (delete-file f))
-;;   (format t "~&generating *tree-test* for n=~a into ~a.obj" n filename)
-;;   (process *tree-test* n (make-instance 'obj-environment) filename))
+(deftype parametrized-word ()
+  '(rte:rte (:* parametrized-letter)))
+
+(defclass rule ()
+  ((name :initform (error "a rule must have a name")
+         :initarg :name
+         :reader name
+         :type symbol)
+   (function :initform nil
+             :initarg :function
+             :accessor function
+             :type (or null function))
+   (instruction :initform (error "a rule must have an instruction")
+                :initarg :instruction
+                :accessor instruction
+                :type function)))
+
+(defclass lsystem ()
+  ((axiom :initform ()
+          :initarg :axiom
+          :reader axiom
+          :type parametrized-word)
+   (rules :initform (make-hash-table)
+          :initarg :rules
+          :accessor rules
+          :type hash-table)))
+
+(defgeneric set-rule (lsystem rule)
+  (:method ((lsystem lsystem) (rule rule))
+    (setf (gethash (name rule)
+                   (rules lsystem))
+          rule)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Axiom expansion
+
+(defun rule-of-parametrized-letter (lsystem letter)
+  (declare (type lsystem lsystem)
+           (type parametrized-letter letter))
+  (destructuring-bind (name &rest args) letter
+    (values (gethash name (rules lsystem))
+            args)))
+
+(defun parametrized-letter->instruction (lsystem letter)
+  (declare (type lsystem lsystem)
+           (type parametrized-letter letter))
+  (multiple-value-bind (rule args)
+      (rule-of-parametrized-letter lsystem letter)
+    (assert rule nil "rule not found in L-System ~S for parametrized letter ~S" lsystem letter)
+    (apply (instruction rule)
+           args)))
+
+(defun expand-letter (lsystem letter)
+  (declare (type lsystem lsystem)
+           (type parametrized-letter letter))
+  (multiple-value-bind (rule args)
+      (rule-of-parametrized-letter lsystem letter)
+    (if rule
+        (if-let (f (function rule))
+          (apply (function rule)
+                 args)
+          (list letter))
+        (list letter))))
+
+(defun %iter-lsystem (lsystem n procedure word)
+  (declare (type lsystem lsystem)
+           (type unsigned-byte n)
+           (type cl:function procedure))
+
+  ;; last iteration?
+  (if (zerop n)
+      ;; call the procedure for each letter of the final word section
+      (dolist (letter word)
+        (let ((instruction (parametrized-letter->instruction lsystem letter)))
+          (funcall procedure instruction)))
+
+      ;; otherwise expand and recurse
+      (dolist (letter word)
+        (let ((new-word (expand-letter lsystem letter)))
+          (%iter-lsystem lsystem (1- n) procedure new-word))))
+  (values))
+
+(defun iter-lsystem (lsystem n procedure)
+  (declare (type lsystem lsystem)
+           (type unsigned-byte n)
+           (type cl:function procedure))
+  (%iter-lsystem lsystem n procedure (axiom lsystem))
+  (values))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; define-lsystem, define-rule, #w and #i
+
+(defparameter *lsystem* nil)
+
+(defmacro define-lsystem (name axiom)
+  `(defparameter ,name (setf *lsystem*
+                             (make-instance 'lsystem :axiom ,axiom))))
+
+(defmacro define-rule (name lambda-list instruction &body body)
+  `(set-rule *lsystem*
+             (make-instance 'rule
+                            :name ',name
+                            :function ,(if body
+                                           `(lambda ,lambda-list
+                                              ,@body)
+                                           nil)
+                            :instruction (lambda ,lambda-list
+                                           ,instruction))))
+
+(defmacro parametric-word (&rest words)
+  (flet ((word->list (word)
+             (destructuring-bind (rule &rest parameters)
+                 word
+               `(list ',rule ,@parameters))))
+    (if (= 1 (length words)) ; (FAF) => (list (list 'F) (list 'A) (list 'F))
+        `(list ,@(map 'list
+                      (lambda (character)
+                        `(list ',(symbolicate character)))
+                      (symbol-name (first words))))
+        (etypecase (first words)
+          (symbol ; (A 1 2) => (list (list 'A 1 2))
+           `(list ,(word->list words)))
+          ((and list
+                (not null)) ; ((A) (B 1)) => (list (list 'A) (list 'B 1))
+           (cons 'list (mapcar #'word->list words)))))))
+
+(defmacro instruction-constructor ((class-name &rest args))
+  (let* ((class (find-class class-name))
+         (lambda-list (car (constructor class))))
+    (closer-mop:ensure-finalized class)
+    (let* ((slots (sb-mop:class-slots class))
+           (slot-names (mapcar #'sb-mop:slot-definition-name slots)))
+      (with-gensyms (instruction)
+        `(let ((,instruction (make-instance ',class-name)))
+           (destructuring-bind ,lambda-list (list ,@args)
+             ,@(mapcar (lambda (name)
+                         `(setf (slot-value ,instruction ',name) ,name))
+                       slot-names))
+           ,instruction)))))
+
+(set-dispatch-macro-character #\# #\w
+                              (lambda (stream subchar arg)
+                                (declare (ignore subchar arg))
+                                (let ((words (read stream t nil t)))
+                                  (etypecase words
+                                    (symbol `(parametric-word ,words))
+                                    (list `(parametric-word ,@words))))))
+
+(set-dispatch-macro-character #\# #\i
+                              (lambda (stream subchar arg)
+                                (declare (ignore subchar arg))
+                                (let ((instruction (read stream t nil t)))
+                                  `(instruction-constructor ,instruction))))
