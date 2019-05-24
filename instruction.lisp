@@ -88,19 +88,3 @@
   (:metaclass instruction)
   (:documentation "Applies the given function. Its argument is the environment.")
   (:constructor (procedure)))
-
-(defun eval-instruction-constructor (sexp)
-  (destructuring-bind (class-name &rest args) sexp
-    (let* ((class (find-class class-name))
-           (lambda-list (car (constructor class))))
-      (closer-mop:ensure-finalized class)
-      (let* ((slots (sb-mop:class-slots class))
-             (slot-names (mapcar #'sb-mop:slot-definition-name slots)))
-        (cl:eval
-         (with-gensyms (instruction)
-           `(let ((,instruction (make-instance ',class-name)))
-              (destructuring-bind ,lambda-list (list ,@args)
-                ,@(mapcar (lambda (name)
-                            `(setf (slot-value ,instruction ',name) ,name))
-                          slot-names))
-              ,instruction)))))))
