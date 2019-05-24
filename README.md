@@ -1,36 +1,43 @@
 # cl-lsystem
-A 2D/3D L-System rendering program and library written in Common Lisp. 
+A 2D/3D L-System rendering program and library written in Common Lisp.
 
-## Installation
+## Using it with Docker
 
-1. Clone the repository in a place where ASDF can find it (for example, `~/common-lisp/`),
-2. load the system using `(asdf:load-system :cl-lsystem)`,
-3. enjoy!
+1. Clone the repository and `cd` inside it.
+2. Run:
+   ```shell
+   sudo docker build -t cl-lsystem .
+   ```
+   It will build the system into a Docker container named `cl-lsystem`.
+3. To render one of the example L-Systems, run:
+   ```shell
+   sudo docker run -v /home/path/to/cl-lsystem:/data \
+                   -e LSYS=/data/examples/koch.lisp  \
+                   -e OUT=/data/koch                 \
+                   cl-lsystem
+   ```
+   You should see a file `koch.png` within your `cl-lsystem` directory.
 
-## Dependencies
+## Using it with Common Lisp
 
-https://github.com/leovalais/cl-lsystem/blob/f56b1e43acd95efc8c8a2243b8cd05a0768e696d/cl-lsystem.asd#L11-L17
+### Prerequisites
 
-Most of the dependencies can be installed through *quicklisp*.
-You can find the `:gutils` system at https://github.com/leovalais/gutils.
+Most of the dependencies of `cl-lsystem` can be found on Quicklisp.
+The following, however, need to be installed manually.
 
-## Examples
+* `gutils`: https://github.com/leovalais/gutils
+  * `array-operations`: https://github.com/bendudson/array-operations
+* `cl-netpbm`: https://github.com/sjl/cl-netpbm
 
-### L-System definition: Sierpinski triangle (curve version)
+Cloning the repositories inside a directory that ASDF can access
+(e.g.: `~/common-lisp`) should be enough.
 
-```lisp
-(defparameter *siertri*
-  '(:axiom (Fr)
-    :rules ((F1 (Fr + F1 + Fr))
-            (Fr (F1 - Fr - F1)))
-    :turtle ((Fr (forward 5))
-             (F1 (forward 5))
-             (+ (turn (v 0 0 (/ pi 3))))
-             (- (turn (v 0 0 (- (/ pi 3))))))))
-```
+### Installation
 
-Then render that L-System up to the 7th iteration and save it to `out.png`:
+1. Clone the repository in a place where ASDF can find it (for example, `~/common-lisp/`).
+2. Load the system using `(asdf:load-system :cl-lsystem)`.
+3. **TODO**
 
-```lisp
-(cl-lsystem:process *siertri* 7)
-```
+### Quickstart
+
+**TODO**
