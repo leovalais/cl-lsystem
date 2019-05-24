@@ -100,7 +100,7 @@
 
 (define-lsystem *figure-1.25* #wA)
 (define-rule A () #i(noop)
-  #w[&FL*A]>>>>>[&FL*A]>>>>>>>[&FL*A])
+  #w[&FLA]>>>>>[&FLA]>>>>>>>[&FLA])
 (define-rule F () #i(forward 3)
   #wS>>>>>F)
 (define-rule S () #i(noop)
