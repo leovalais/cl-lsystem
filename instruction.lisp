@@ -76,12 +76,12 @@
 (defclass begin-fill ()
   ()
   (:metaclass singleton-instruction)
-  (:documentation ""))
+  (:documentation "Starts recording vertices on top of a new stacked polygon (cf. `3d-environment/fill-stack'."))
 
 (defclass end-fill ()
   ()
   (:metaclass singleton-instruction)
-  (:documentation ""))
+  (:documentation "Pops the polygon on top of `3d-environment/fill-stack' and fills it."))
 
 (defclass lisp ()
   ((procedure :type cl:function))
