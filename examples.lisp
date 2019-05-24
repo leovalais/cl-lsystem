@@ -98,6 +98,31 @@
 (define-rule D () #i(noop)
   #w!CFB-F+B!FA&F^A&&FB-F+B!FC>>)
 
+(define-lsystem *figure-1.25* #wA)
+(define-rule A () #i(noop)
+  #w[&FL*A]>>>>>[&FL*A]>>>>>>>[&FL*A])
+(define-rule F () #i(forward 3)
+  #wS>>>>>F)
+(define-rule S () #i(noop)
+  #wFL)
+(define-rule L () #i(noop)
+  #w[^^{-J+J+J-!-J+J+J}])
+(define-rule J () #i(jump 0.5))
+(define-rule ! () #i(yaw pi)) ; turn around
+(define-rule { () #i(begin-fill))
+(define-rule } () #i(end-fill))
+(define-rule [ () #i(stack))
+(define-rule ] () #i(unstack))
+(let ((delta (deg->rad 22.5)))
+  (define-rule < () #i(roll delta))
+  (define-rule > () #i(roll (- delta)))
+  (define-rule ^ () #i(pitch delta))
+  (define-rule & () #i(pitch (- delta)))
+  (define-rule + () #i(yaw delta))
+  (define-rule - () #i(yaw (- delta))))
+
+
+
 (define-lsystem *param-1.7* #w((B 2) (A 4 4)))
 (define-rule A (x y) #i(forward (+ x y))
   (if (<= y 3)
