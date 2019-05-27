@@ -1,4 +1,7 @@
-(in-package :cl-lsystem)
+(defpackage :cl-lsystem/examples
+  (:use :cl :cl-lsystem)
+  (:shadowing-import-from :cl function position space))
+(in-package :cl-lsystem/examples)
 
 ;;;; Koch curve L-System
 ;;;; Definition:
@@ -23,6 +26,6 @@
 ;; process it for n=6
 (process *koch* 6
          :env (make-instance 'png-environment
-                             :origin (v -1950 -950)
+                             :origin (gutils:v -1950 -950)
                              :height 2000
                              :width 4000))
