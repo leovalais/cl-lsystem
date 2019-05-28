@@ -19,10 +19,11 @@
                                      'read-from-string))))
                        arguments))
          (envs (mapcar (lambda (arg)
-                         (etypecase arg
-                           (symbol (symbol-name arg))
-                           (list (or (fourth arg)
-                                     (symbol-name (first arg))))))
+                         (cl-arrows:->> (etypecase arg
+                                          (symbol (symbol-name arg))
+                                          (list (or (fourth arg)
+                                                    (symbol-name (first arg)))))
+                                        (substitute #\_ #\-)))
                        arguments)))
     `(defun ,name (&key ,@(mapcar (lambda (var def)
                                     (list var def))
