@@ -23,4 +23,4 @@
   (define-rule + () #i(yaw delta))
   (define-rule - () #i(yaw (- delta))))
 
-(obj)
+(obj :n 5 :edges-per-branch 5 :branch-radius 0.6 :branch-decay 0.33)

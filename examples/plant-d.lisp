@@ -8,4 +8,4 @@
 (define-rule [ () #i(stack))
 (define-rule ] () #i(unstack))
 
-(png :direction (v 0.0 1.0))
+(png :direction (v 0.0 1.0) :n 7 :height 2000 :origin (v 0 -950))

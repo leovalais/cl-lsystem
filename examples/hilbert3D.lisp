@@ -10,4 +10,4 @@
 (define-rule D () #i(noop)
   #w!CFB-F+B!FA&F^A&&FB-F+B!FC>>)
 
-(obj)
+(obj :n 2)
