@@ -23,5 +23,18 @@
                (:file "instruction")
                (:file "env")
                (:file "eval")
-               (:file "endpoints")
-               (:file "examples")))
+               (:file "endpoints")))
+
+(asdf:defsystem :cl-lsystem/scripting
+  :name "cl-lsystem/examples"
+  :version "0.0.0"
+  :maintainer "Léo Valais"
+  :author "Léo Valais"
+  :licence "MIT"
+  :description "1 4M GR00T"
+
+  :depends-on (:cl-lsystem)
+
+  :serial t
+  :components ((:file "package")
+               (:file "scripting")))

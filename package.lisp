@@ -61,5 +61,8 @@
    ;; eval.lisp
 
    ;; endpoints
-   *out*
    process))
+
+(defpackage :cl-lsystem/scripting
+  (:use :cl :cl-lsystem :gutils)
+  (:shadowing-import-from :cl-lsystem function position space save))

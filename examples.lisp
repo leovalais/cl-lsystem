@@ -1,15 +1,7 @@
 (in-package :cl-lsystem)
 
-(defun deg->rad (x)
-  (* x (/ pi 180)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; 2D L-Systems
-
-(define-lsystem *koch* #wF)
-(define-rule F () #i(forward 5) #wF+F-F-F+F)
-(define-rule + () #i(rotate (/ pi 2)))
-(define-rule - () #i(rotate (/ pi -2)))
 
 (define-lsystem *siertri* #wFr)
 (define-rule F1 () #i(forward 5) #wFr+F1+Fr)

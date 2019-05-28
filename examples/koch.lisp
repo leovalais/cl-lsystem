@@ -1,8 +1,3 @@
-(defpackage :cl-lsystem/examples
-  (:use :cl :cl-lsystem)
-  (:shadowing-import-from :cl function position space))
-(in-package :cl-lsystem/examples)
-
 ;;;; Koch curve L-System
 ;;;; Definition:
 ;;;;     ω = F
@@ -23,9 +18,5 @@
 (define-rule - ()
     #i(rotate (/ pi -2)))
 
-;; process it for n=6
-(process *koch* 6
-         :env (make-instance 'png-environment
-                             :origin (gutils:v -1950 -950)
-                             :height 2000
-                             :width 4000))
+;; produces a PNG image
+(png)

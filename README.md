@@ -12,7 +12,7 @@ A 2D/3D L-System rendering program and library written in Common Lisp.
 3. To render one of the example L-Systems, run:
    ```shell
    sudo docker run -v /home/path/to/cl-lsystem:/data \
-                   -e LSYS=/data/examples/koch.lisp  \
+                   -e SCRIPT=/data/examples/koch.lisp  \
                    -e OUT=/data/koch                 \
                    cl-lsystem
    ```
@@ -27,7 +27,7 @@ The following, however, need to be installed manually.
 
 * `gutils`: https://github.com/leovalais/gutils
   * `array-operations`: https://github.com/bendudson/array-operations
-* `cl-netpbm`: https://github.com/sjl/cl-netpbm
+  * `cl-netpbm`: https://github.com/sjl/cl-netpbm
 
 Cloning the repositories inside a directory that ASDF can access
 (e.g.: `~/common-lisp`) should be enough.
