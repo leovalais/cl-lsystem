@@ -3,12 +3,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; 2D L-Systems
 
-(define-lsystem *siertri* #wFr)
-(define-rule F1 () #i(forward 5) #wFr+F1+Fr)
-(define-rule Fr () #i(forward 5) #w(F1-Fr-F1))
-(define-rule + () #i(rotate (/ pi 3)))
-(define-rule - () #i(rotate (/ pi -3)))
-
 ;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
 
 (define-lsystem *plant-p* #wX)

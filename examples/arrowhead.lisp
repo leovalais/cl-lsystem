@@ -1,0 +1,6 @@
+(define-lsystem *siertri* #wG)
+(define-rule F () #i(forward 5) #wG+F+G)
+(define-rule G () #i(forward 5) #w(F-G-F))
+(define-rule + () #i(rotate (/ pi 3)))
+(define-rule - () #i(rotate (/ pi -3)))
+(png)
