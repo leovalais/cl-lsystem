@@ -9,3 +9,6 @@
                    :summing p :into cumul
                    :collect `((<= ,x ,cumul) ,@body))
            (t (error "with-disjoint-outcomes: inconsistent probabilities")))))))
+
+(defun deg->rad (x)
+  (* x (/ pi 180)))
