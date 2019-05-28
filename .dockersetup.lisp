@@ -10,4 +10,5 @@
   (with-open-file (in asd)
     (let* ((system (cddr (read in)))
            (deps (getf system :depends-on)))
+      (setf deps (remove :array-operations deps))
       (mapc #'ql:quickload deps))))
