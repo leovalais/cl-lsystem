@@ -38,10 +38,13 @@
                  vars envs evls)
        ,@body)))
 
+(defun eval-read-from-string (&rest args)
+  (eval (apply #'read-from-string args)))
+
 (define-env-fun png ((lsystem *lsystem*)
                      (n 0)
                      (out "out" identity)
-                     (origin (v 0.0 0.0) (lambda (s) (eval (read-from-string s))))
+                     (origin (v 0.0 0.0) eval-read-from-string)
                      (width 500)
                      (height 500)
                      (direction (v 1.0 0.0)))
