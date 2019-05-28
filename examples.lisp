@@ -1,41 +1,6 @@
 (in-package :cl-lsystem)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; 2D L-Systems
-
-;; plants in http://algorithmicbotany.org/papers/abop/abop-ch1.pdf figure 1.24
-
-(define-lsystem *plant-p* #wX)
-(define-rule X () #i(forward 5) #wF[+X]F[-X]+X)
-(define-rule F () #i(forward 5) #wFF)
-(define-rule + () #i(rotate (/ pi 9)))
-(define-rule - () #i(rotate (/ pi -9)))
-(define-rule [ () #i(stack))
-(define-rule ] () #i(unstack))
-
-(define-lsystem *plant-p* #wX)
-(define-rule X () #i(forward 5) #wF-[[X]+X]+F[+FX]-X)
-(define-rule F () #i(forward 5) #wFF)
-(define-rule + () #i(rotate (deg->rad 22.5)))
-(define-rule - () #i(rotate (deg->rad 22.5)))
-(define-rule [ () #i(stack))
-(define-rule ] () #i(unstack))
-
-;; equation (1.9) of http://algorithmicbotany.org/papers/abop/abop-ch1.pdf
-
-(let ((R 1.456)
-      (K 750.0)
-      (delta (deg->rad 85)))
-  (define-lsystem *eq-1.9* #w(A 1))
-  (define-rule A (s) #i(noop)
-    #w((F s) ([) (+) (A (/ s R)) (]) ([) (-) (A (/ s R)) (])))
-  (define-rule F (s) #i(forward (* s K)))
-  (define-rule [ () #i(stack))
-  (define-rule ] () #i(unstack))
-  (define-rule + () #i(rotate delta))
-  (define-rule - () #i(rotate (- delta))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; 3D L-Systems
 
 ;; trees in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
