@@ -10,6 +10,7 @@
   (:export
    ;; utils.lisp
    with-disjoint-outcomes
+   deg->rad
 
    ;; lsystem.lisp
    parametrized-letter

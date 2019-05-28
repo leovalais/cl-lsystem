@@ -1,0 +1,26 @@
+;; figure in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
+
+(define-lsystem *figure-1.25* #wA)
+(define-rule A () #i(noop)
+  #w[&FLA]>>>>>[&FLA]>>>>>>>[&FLA])
+(define-rule F () #i(forward 3)
+  #wS>>>>>F)
+(define-rule S () #i(noop)
+  #wFL)
+(define-rule L () #i(noop)
+  #w[^^{-J+J+J-!-J+J+J}])
+(define-rule J () #i(jump 0.5))
+(define-rule ! () #i(yaw pi)) ; turn around
+(define-rule { () #i(begin-fill))
+(define-rule } () #i(end-fill))
+(define-rule [ () #i(stack))
+(define-rule ] () #i(unstack))
+(let ((delta (deg->rad 22.5)))
+  (define-rule < () #i(roll delta))
+  (define-rule > () #i(roll (- delta)))
+  (define-rule ^ () #i(pitch delta))
+  (define-rule & () #i(pitch (- delta)))
+  (define-rule + () #i(yaw delta))
+  (define-rule - () #i(yaw (- delta))))
+
+(obj)

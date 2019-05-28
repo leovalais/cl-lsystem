@@ -52,7 +52,37 @@
                             :origin origin
                             :width width
                             :height height
-                            :turtle (make-instance 'turtle2D
-                                                   :direction direction))))
+                            :turtle (make-instance 'turtle2d :direction direction))))
     (process lsystem n env)
     (save env out)))
+
+(define-env-fun obj ((lsystem *lsystem*)
+                     (n 0)
+                     (out "out" identity)
+                     (space (mat (1.0 0.0 0.0)
+                                 (0.0 1.0 0.0)
+                                 (0.0 0.0 1.0))
+                            eval-read-from-string)
+                     (branch-radius 1.0)
+                     (branch-decay 1.0)
+                     (edges-per-branch 16))
+  (let ((env (make-instance 'obj-environment
+                            :branch-radius branch-radius
+                            :branch-decay branch-decay
+                            :edges-per-branch edges-per-branch
+                            :turtle (make-instance 'turtle3d :space space))))
+    (process lsystem n env)
+    (save env out)))
+
+(defun define-3d-turtle (theta &optional (delta 3))
+  "Defines the de-facto standard rules for a 3D turtle. `theta' represents how much to spin when a rotation is performed. `delta' represents how much units to move when a `jump' (and `forward') occurs. NOTE that the rules `/' and `\' for rolling are replaced by `>' and `<' because of the Common Lisp reader."
+  (define-rule F () #i(forward delta))
+  (define-rule G () #i(jump delta))
+  (define-rule [ () #i(stack))
+  (define-rule ] () #i(unstack))
+  (define-rule < () #i(roll theta))
+  (define-rule > () #i(roll (- theta)))
+  (define-rule ^ () #i(pitch theta))
+  (define-rule & () #i(pitch (- theta)))
+  (define-rule + () #i(yaw theta))
+  (define-rule - () #i(yaw (- theta))))
