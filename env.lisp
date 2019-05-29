@@ -222,8 +222,12 @@
 ;;;; Wavefront OBJ
 
 (defclass obj-environment (3d-environment)
-  ((vertices :initform ()
-             :accessor vertices)
+  ((vertices :initform (make-array 16 :element-type 'V3
+                                      :initial-element (v 0 0 0)
+                                      :adjustable t
+                                      :fill-pointer 1)
+             :accessor vertices
+             :type (array V3 1))
    (lines :initform ()
           :accessor lines)
    (faces :initform ()
@@ -232,10 +236,6 @@
                      :initarg :edges-per-branch
                      :reader edges-per-branch
                      :type (integer (0) *))))
-
-
-(defmethod initialize-instance :after ((env obj-environment) &key)
-  (add-vertice env (v 0 0 0)))
 
 (defmethod stack progn ((env obj-environment))
   (with-slots (stack) env
@@ -255,25 +255,28 @@
   (with-open-file (obj (format nil "~a.obj" filename)
                        :direction :output
                        :if-exists :supersede)
-    (with-slots (vertices lines faces) env
-      (labels ((dump-v (v)
-                 (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
-               (index-of (v)
-                 (1+ (cl:position v vertices :test #'v~)))
-               (dump-l (l)
-                 (destructuring-bind (src . dst) l
-                   (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
-               (dump-f (f)
-                 (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
-        (mapc #'dump-v vertices)
-        (mapc #'dump-f faces)
-        (mapc #'dump-l lines))))
+    (with-slots (lines faces) env
+      (let* ((vertices (remove-duplicates (vertices env)
+                                          :test #'v~))
+             (indexes (make-hash-table :size (length vertices))))
+        (labels ((dump-v (v)
+                   (format obj "~&v ~f ~f ~f" (vx v) (vy v) (vz v)))
+                 (index-of (v)
+                   (or (gethash v indexes)
+                       (setf (gethash v indexes)
+                             (1+ (cl:position v vertices :test #'v~)))))
+                 (dump-l (l)
+                   (destructuring-bind (src . dst) l
+                     (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
+                 (dump-f (f)
+                   (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
+          (loop :for v :across vertices
+                :do (dump-v v))
+          (mapc #'dump-f faces)
+          (mapc #'dump-l lines)))))
   (values))
-
 
 (defun add-vertice (env v)
   (declare (type V3 v)
            (type obj-environment env))
-  (with-slots (vertices) env
-    (unless (member v vertices :test #'v~)
-      (push v vertices))))
+  (vector-push-extend v (vertices env)))
