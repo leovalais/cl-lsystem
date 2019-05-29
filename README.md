@@ -1,4 +1,6 @@
 # cl-lsystem
+[![CircleCI](https://circleci.com/gh/leovalais/cl-lsystem/tree/master.svg?style=svg)](https://circleci.com/gh/leovalais/cl-lsystem/tree/master)
+
 A 2D/3D L-System rendering program and library written in Common Lisp.
 
 ## Using it with Docker

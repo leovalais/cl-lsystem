@@ -6,6 +6,7 @@
 (setf sb-impl::*default-external-format* :utf-8)
 (setf sb-alien::*default-c-string-external-format* :utf-8)
 
+(asdf:load-system :cl-lsystem :force t :verbose nil)
 (asdf:load-system :cl-lsystem/scripting :force t :verbose nil)
 (in-package :cl-lsystem/scripting)
 
