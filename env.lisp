@@ -149,7 +149,6 @@
           (pop (env-stack env))))
   (:method-combination progn :most-specific-first))
 
-
 (defmacro with-updated-turtle ((turtle env) &body body) ; TODO
   (once-only (env)
     `(setf (turtle ,env)
@@ -221,6 +220,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Wavefront OBJ
 
+(deftype face ()
+  '(rte:rte (:cat V3 V3 V3 (:* V3))))
+
 (defclass obj-environment (3d-environment)
   ((vertices :initform (make-array 16 :element-type 'V3
                                       :initial-element (v 0 0 0)
@@ -229,13 +231,49 @@
              :accessor vertices
              :type (array V3 1))
    (lines :initform ()
-          :accessor lines)
-   (faces :initform ()
-          :accessor faces)
+          :accessor lines
+          :type list)
+   (faces-root :initform (make-obj-face-tree :group-name :root)
+               :accessor faces-root
+               :type obj-face-tree)
+   (faces-stack :initform ()
+                :accessor faces-stack
+                :type (rte:rte (:* face)))
    (edges-per-branch :initform 16
                      :initarg :edges-per-branch
                      :reader edges-per-branch
                      :type (integer (0) *))))
+
+(defstruct (obj-face-tree (:conc-name oft-))
+  (group-name (gensym "OBJ-FACE-TREE-GROUP-NAME")
+   :type (or (and symbol (not keyword))
+             (eql :root)))
+  (material nil :type (or null obj-material))
+  (faces (make-array 16 :element-type '(or face null)
+                        :initial-element ()
+                        :adjustable t
+                        :fill-pointer 0)
+   :type (array face 1))
+  (subgroups (make-array 4 :element-type '(or null obj-face-tree)
+                           :initial-element nil
+                           :adjustable t
+                           :fill-pointer 0)
+   :type (array obj-face-tree 1)))
+
+(defclass obj-material ()
+  ((name :initform (gensym "MATERIAL")
+         :initarg :name
+         :reader name
+         :type (and symbol (not keyword)))
+   (diffuse :initform (v 1.0 1.0 1.0)
+            :initarg :diffuse
+            :accessor diffuse
+            :type (vect 3 (float 0.0 1.0)))))
+
+
+(defmethod initialize-instance :after ((env obj-environment) &key)
+  (push (faces-root env)
+        (faces-stack env)))
 
 (defmethod stack progn ((env obj-environment))
   (with-slots (stack) env
@@ -255,8 +293,8 @@
   (with-open-file (obj (format nil "~a.obj" filename)
                        :direction :output
                        :if-exists :supersede)
-    (with-slots (lines faces) env
-      (let* ((vertices (remove-duplicates (vertices env)
+    (with-slots (lines faces-root) env
+      (let* ((vertices (delete-duplicates (vertices env)
                                           :test #'v~))
              (indexes (make-hash-table :size (length vertices))))
         (labels ((dump-v (v)
@@ -268,15 +306,75 @@
                  (dump-l (l)
                    (destructuring-bind (src . dst) l
                      (format obj "~&l ~a ~a" (index-of src) (index-of dst))))
-                 (dump-f (f)
-                   (format obj "~&f~{ ~a~}" (mapcar #'index-of f))))
+                 (dump-f (f &optional (n 0))
+                   (format obj "~&~v{~a~:*~}f~{ ~a~}"
+                           n '("  ") (mapcar #'index-of f))))
+
           (loop :for v :across vertices
                 :do (dump-v v))
-          (mapc #'dump-f faces)
+
+          (let ((materials ()))
+            (labels ((walk (oft n)
+                       (format obj "~&~v{~a~:*~}~a ~a" n '("  ")
+                               (if (zerop n) "object" "group")
+                               (symbol-name (oft-group-name oft)))
+                       (incf n)
+                       (when-let (mat (oft-material oft))
+                         (pushnew mat materials)
+                         (format obj "~&~v{~a~:*~}usemtl ~a" n '("  ") (name mat)))
+                       (loop :for f :across (oft-faces oft)
+                             :do (dump-f f n))
+                       (loop :for g :across (oft-subgroups oft)
+                             :do (walk g n))))
+              (walk faces-root 0))
+
+            (when materials
+              (with-open-file (mtl (format nil "~a.mtl" filename)
+                                   :direction :output
+                                   :if-exists :supersede)
+                (mapc (lambda (mat)
+                        (save-mtl mtl mat))
+                      materials))))
+
           (mapc #'dump-l lines)))))
   (values))
+
+(defun save-mtl (mtl obj-material)
+  (with-slots (name diffuse) obj-material
+    (format mtl "~&newmtl ~a
+Ns 96.078431
+Ka 1.000000 1.000000 1.000000
+Kd ~f ~f ~f
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2"
+            name (vx diffuse) (vy diffuse) (vz diffuse))))
 
 (defun add-vertice (env v)
   (declare (type V3 v)
            (type obj-environment env))
   (vector-push-extend v (vertices env)))
+
+(defun add-face (env f)
+  (declare (type face f)
+           (type obj-environment env))
+  (let ((node (first (faces-stack env))))
+    (assert node nil "fucking fuck")
+    (vector-push-extend f (oft-faces node))))
+
+(defun add-subgroup (env oft)
+  (declare (type obj-face-tree oft)
+           (type obj-environment env))
+  (let ((node (first (faces-stack env))))
+    (assert node nil "fucking fuck")
+    (vector-push-extend oft (oft-subgroups node))
+    (push oft (faces-stack env))))
+
+(defun pop-face-stack (env)
+  (declare (type obj-environment env))
+  (unless (rest (faces-stack env))
+    (assert (eql (oft-group-name (first (faces-stack env))) :root) nil "uh-oh")
+    (error "cannot pop the root of the obj-face-tree ; check your L-System definition"))
+  (pop (faces-stack env)))

@@ -39,6 +39,8 @@
    unstack
    begin-fill
    end-fill
+   apply-material
+   pop-material
    lisp
 
    ;; env.lisp
@@ -56,8 +58,14 @@
    update-turtle
    png-environment
    eval-in-graphics-state
-   obj-environment vertices lines faces edges-per-branch
+   face
+   obj-environment vertices lines faces-root faces-stack edges-per-branch
+   obj-face-tree make-obj-face-tree oft-group-name oft-material oft-faces oft-subgroups
+   obj-material diffuse
    add-vertice
+   add-face
+   add-subgroup
+   pop-face-stack
 
    ;; eval.lisp
 
