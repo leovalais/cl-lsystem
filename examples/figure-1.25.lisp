@@ -1,6 +1,9 @@
 ;; figure in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
 
-(define-lsystem *figure-1.25* #wA)
+(defparameter *branch-mtl* (make-instance 'obj-material :diffuse (v 1.0 0.0 0.0)))
+(defparameter *leaf-mtl* (make-instance 'obj-material :diffuse (v 0.0 1.0 0.0)))
+
+(define-lsystem *figure-1.25* #wBA)
 (define-rule A () #i(noop)
   #w[&FLA]>>>>>[&FLA]>>>>>>>[&FLA])
 (define-rule F () #i(forward 3)
@@ -8,13 +11,16 @@
 (define-rule S () #i(noop)
   #wFL)
 (define-rule L () #i(noop)
-  #w[^^{-J+J+J-!-J+J+J}])
+  #w[^^G{-J+J+J-!-J+J+J}$])
 (define-rule J () #i(jump 0.5))
 (define-rule ! () #i(yaw pi)) ; turn around
 (define-rule { () #i(begin-fill))
 (define-rule } () #i(end-fill))
 (define-rule [ () #i(stack))
 (define-rule ] () #i(unstack))
+(define-rule B () #i(apply-material *branch-mtl*))
+(define-rule G () #i(apply-material *leaf-mtl*))
+(define-rule $ () #i(pop-material))
 (let ((delta (deg->rad 22.5)))
   (define-rule < () #i(roll delta))
   (define-rule > () #i(roll (- delta)))
@@ -23,4 +29,4 @@
   (define-rule + () #i(yaw delta))
   (define-rule - () #i(yaw (- delta))))
 
-(obj :n 5 :edges-per-branch 5 :branch-radius 0.6 :branch-decay 0.33)
+(obj :n 5 :edges-per-branch 5 :branch-radius 0.6 :branch-decay 0.7)
