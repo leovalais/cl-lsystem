@@ -270,6 +270,10 @@
             :accessor diffuse
             :type (vect 3 (float 0.0 1.0)))))
 
+(defmacro define-material (name type &key diffuse)
+  (let ((class (ecase type
+                 (:obj 'obj-material))))
+    `(defparameter ,name (make-instance ',class :diffuse ,diffuse))))
 
 (defmethod initialize-instance :after ((env obj-environment) &key)
   (push (faces-root env)

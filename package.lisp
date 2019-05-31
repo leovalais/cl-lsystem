@@ -62,6 +62,7 @@
    obj-environment vertices lines faces-root faces-stack edges-per-branch
    obj-face-tree make-obj-face-tree oft-group-name oft-material oft-faces oft-subgroups
    obj-material diffuse
+   define-material
    add-vertice
    add-face
    add-subgroup

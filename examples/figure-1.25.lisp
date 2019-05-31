@@ -1,7 +1,9 @@
 ;; figure in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
 
-(defparameter *branch-mtl* (make-instance 'obj-material :diffuse (v 1.0 0.0 0.0)))
-(defparameter *leaf-mtl* (make-instance 'obj-material :diffuse (v 0.0 1.0 0.0)))
+(define-material *branch-mtl* :obj
+  :diffuse (v 0.51 0.32 0.0))
+(define-material *leaf-mtl* :obj
+  :diffuse (v 0.3 0.66 0.23))
 
 (define-lsystem *figure-1.25* #wBA)
 (define-rule A () #i(noop)
