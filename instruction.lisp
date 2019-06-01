@@ -83,6 +83,17 @@
   (:metaclass singleton-instruction)
   (:documentation "Pops the polygon on top of `3d-environment/fill-stack' and fills it."))
 
+(defclass apply-material ()
+  ((material :type material))
+  (:metaclass instruction)
+  (:constructor (material))
+  (:documentation "Uses the given `material' for faces until `pop-material' is encountered."))
+
+(defclass pop-material ()
+  ()
+  (:metaclass singleton-instruction)
+  (:documentation "Removes the last `material' applied by `apply-ametrial'."))
+
 (defclass lisp ()
   ((procedure :type cl:function))
   (:metaclass instruction)

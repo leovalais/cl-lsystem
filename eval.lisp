@@ -209,7 +209,7 @@ translates them by `lambda' which is a 3D vector. Returns the list of the new ve
                (mapcar (lambda (v)
                          (v+ lambda (v* v (scalar->v delta (v-dim v)))))
                        vertices)))
-        (with-slots (turtle branch-radius branch-decay edges-per-branch faces) env
+        (with-slots (turtle branch-radius branch-decay edges-per-branch) env
           (let* ((newp (position turtle))
                  (circle (circle-in-plan v w edges-per-branch))
                  (c1 (scale-translate-vertices branch-radius oldp circle))
@@ -219,22 +219,24 @@ translates them by `lambda' which is a 3D vector. Returns the list of the new ve
             ;; update environment's branch radius
             (setf branch-radius new-radius)
 
-            ;; add vertices of the circles
+            ;; add the vertices of the circles
             (flet ((add (vs)
                      (dolist (v vs)
                        (add-vertice env v))))
               (add c1)
               (add c2))
 
-            ;; add the faces
             ;; the circles (convex shapes) are within the same plan => one single face
-            (push c1 faces)
-            (push c2 faces)
+            (add-face env c1)
+            (add-face env c2)
+
             ;; the body of the cylinder
-            (appendf faces (make-cylinder c1 c2 edges-per-branch))))))))
+            (mapc (lambda (f)
+                    (add-face env f))
+                  (make-cylinder c1 c2 edges-per-branch))))))))
 
 (defmethod eval ((end-fill end-fill) (env obj-environment))
-  (with-slots (fill-stack faces) env
+  (with-slots (fill-stack) env
     (let ((polygon (-<> (first fill-stack) ; the polygon is the top of the stack
                         ;; reversed because of the head insertion of voxels
                         (reverse <>)
@@ -249,5 +251,14 @@ translates them by `lambda' which is a 3D vector. Returns the list of the new ve
             polygon)
       ;; finally add the face (NOTE the writter of the L-System is responsible
       ;; of normal interpolation correctness)
-      (push polygon faces)))
+      (add-face env polygon)))
   (call-next-method))
+
+(defmethod eval ((apply-material apply-material) (env obj-environment))
+  (with-slots (material) apply-material
+    (let ((new-group (make-obj-face-tree :material material)))
+      (add-subgroup env new-group))))
+
+(defmethod eval ((pop-material pop-material) (env obj-environment))
+  (declare (ignore pop-material))
+  (pop-face-stack env))

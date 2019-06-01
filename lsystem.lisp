@@ -35,9 +35,11 @@
 
 (defgeneric set-rule (lsystem rule)
   (:method ((lsystem lsystem) (rule rule))
-    (setf (gethash (name rule)
-                   (rules lsystem))
-          rule)))
+    (with-slots (name) rule
+      (when (gethash name (rules lsystem))
+        (warn "redefining rule ~a for lsystem ~S" name lsystem))
+      (setf (gethash name (rules lsystem))
+            rule))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Axiom expansion
