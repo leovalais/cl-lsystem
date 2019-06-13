@@ -1,7 +1,7 @@
 ;; figure in http://www.geekyblogger.com/2008/04/tree-and-l-system.html
 
 (define-material *branch-mtl* :obj
-  :diffuse (v 0.51 0.32 0.0))
+  :diffuse (v 0.63 0.32 0.18))
 (define-material *leaf-mtl* :obj
   :diffuse (v 0.3 0.66 0.23))
 
