@@ -4,7 +4,7 @@
 (define-rule X () #i(forward 5) #wF-[[X]+X]+F[+FX]-X)
 (define-rule F () #i(forward 5) #wFF)
 (define-rule + () #i(rotate (deg->rad 22.5)))
-(define-rule - () #i(rotate (deg->rad 22.5)))
+(define-rule - () #i(rotate (deg->rad -22.5)))
 (define-rule [ () #i(stack))
 (define-rule ] () #i(unstack))
 
