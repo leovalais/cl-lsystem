@@ -81,6 +81,8 @@
   (define-rule G () #i(jump delta))
   (define-rule [ () #i(stack))
   (define-rule ] () #i(unstack))
+  (define-rule { () #i(begin-fill))
+  (define-rule } () #i(end-fill))
   (define-rule < () #i(roll theta))
   (define-rule > () #i(roll (- theta)))
   (define-rule ^ () #i(pitch theta))
