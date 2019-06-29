@@ -15,13 +15,14 @@
                 :closer-mop
                 :vecto
                 :cl-arrows)
+  :defsystem-depends-on (:rte)
 
   :serial t
   :components ((:file "package")
                (:file "utils")
-               (:file "lsystem")
+               (:rte-file "lsystem")
                (:file "instruction")
-               (:file "env")
+               (:rte-file "env")
                (:file "eval")
                (:file "endpoints")))
 
