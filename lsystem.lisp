@@ -4,7 +4,7 @@
 ;;;; Definitions
 
 (deftype parametrized-letter ()
-  '(rte:rte (:cat symbol (:* t))))
+  '(or symbol (rte:rte (:cat symbol (:* t)))))
 
 (deftype parametrized-word ()
   '(rte:rte (:* parametrized-letter)))
@@ -47,9 +47,15 @@
 (defun rule-of-parametrized-letter (lsystem letter)
   (declare (type lsystem lsystem)
            (type parametrized-letter letter))
-  (destructuring-bind (name &rest args) letter
-    (values (gethash name (rules lsystem))
-            args)))
+  (etypecase letter
+    (symbol
+     (values (gethash letter (rules lsystem))
+             nil))
+    (list
+     (destructuring-bind (name &rest args)
+         letter
+       (values (gethash name (rules lsystem))
+               args)))))
 
 (defun parametrized-letter->instruction (lsystem letter)
   (declare (type lsystem lsystem)
@@ -131,7 +137,7 @@
     (if (= 1 (length words)) ; (FAF) => (list (list 'F) (list 'A) (list 'F))
         `(list ,@(map 'list
                       (lambda (character)
-                        `(list ',(symbolicate character)))
+                        ',(symbolicate character))
                       (symbol-name (first words))))
         (etypecase (first words)
           (symbol ; (A 1 2) => (list (list 'A 1 2))
